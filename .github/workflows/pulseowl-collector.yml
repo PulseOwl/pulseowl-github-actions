@@ -4,12 +4,12 @@ name: PulseOwl Collector Caller
 on:
   workflow_dispatch:
     inputs:
-      pulseowl_env:
+      pulseowl-env:
         description: "Optional non-prod env suffix (e.g. lcl, stg). Blank = prod."
         required: false
         type: string
         default: ""
-      config_path:
+      config-path:
         description: "Optional path to PulseOwl config file in the repo."
         required: false
         type: string
@@ -27,6 +27,6 @@ jobs:
   pulseowl:
     uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@collector-v1
     with:
-      pulseowl_env: ${{ inputs.pulseowl_env || '' }}
-      config_path: ${{ inputs.config_path  || '.config/pulseowl/config.yml' }}
+      pulseowl-env: ${{ inputs.pulseowl-env || '' }}
+      config-path: ${{ inputs.config-path  || '.config/pulseowl/config.yml' }}
       audience: "pulseowl"

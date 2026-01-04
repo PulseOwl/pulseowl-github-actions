@@ -4,11 +4,11 @@ name: PulseOwl Collector Job
 on:
   workflow_call:
     inputs:
-      pulseowl_env:
+      pulseowl-env:
         required: false
         type: string
         default: ""
-      config_path:
+      config-path:
         required: false
         type: string
         default: ""
@@ -35,6 +35,6 @@ jobs:
       - name: Run PulseOwl collector
         uses: PulseOwl/pulseowl-github-actions/actions/collector@collector-v1
         with:
-          pulseowl_env: ${{ inputs.pulseowl_env }}
-          config_path: ${{ inputs.config_path }}
+          pulseowl-env: ${{ inputs.pulseowl-env }}
+          config-path: ${{ inputs.config-path }}
           audience: ${{ inputs.audience }}

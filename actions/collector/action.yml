@@ -1,11 +1,11 @@
 name: "PulseOwl Collector"
 description: "Collects repository metadata and posts it to PulseOwl using GitHub OIDC."
 inputs:
-  pulseowl_env:
+  pulseowl-env:
     description: "Optional env suffix (blank = prod)."
     required: false
     default: ""
-  config_path:
+  config-path:
     description: "Optional path to PulseOwl config file."
     required: false
     default: ""

@@ -85,8 +85,8 @@ async function postJsonWithRetry(
 
 async function run(): Promise<void> {
   try {
-    const envInput = core.getInput("pulseowl_env") ?? "";
-    const configPathInput = core.getInput("config_path") ?? "";
+    const envInput = core.getInput("pulseowl-env") ?? "";
+    const configPathInput = core.getInput("config-path") ?? "";
     const audience =
       (core.getInput("audience") ?? "pulseowl").trim() || "pulseowl";
 
