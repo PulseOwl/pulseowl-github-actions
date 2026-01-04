@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 type EnvSuffix = "" | string;
 
 const VERSION = "1.0.0";
+const DEFAULT_CONFIG_PATH = ".config/pulseowl/config.yml";
 
 function normalizeEnvSuffix(raw: string): EnvSuffix {
   const v = raw.trim();
@@ -86,7 +87,8 @@ async function postJsonWithRetry(
 async function run(): Promise<void> {
   try {
     const envInput = core.getInput("pulseowl-env") ?? "";
-    const configPathInput = core.getInput("config-path") ?? "";
+    const configPathInput =
+      (core.getInput("config-path") || "").trim() || DEFAULT_CONFIG_PATH;
     const audience =
       (core.getInput("audience") ?? "pulseowl").trim() || "pulseowl";
 
@@ -97,16 +99,11 @@ async function run(): Promise<void> {
     core.info(`PulseOwl env suffix: "${envSuffix || "prod"}"`);
     core.info(`PulseOwl endpoint: ${endpoint}`);
 
-    if (configPathInput.trim()) {
-      const full = resolve(process.cwd(), configPathInput.trim());
-      const exists = existsSync(full);
-      core.info(
-        `config_path: ${configPathInput.trim()} (resolved: ${full}) exists=${exists}`
-      );
-      // For now: do not fail if missing; you said it's optional.
-    } else {
-      core.info("config_path: (not provided)");
-    }
+    const full = resolve(process.cwd(), configPathInput);
+    const exists = existsSync(full);
+    core.info(
+      `config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`
+    );
 
     // Request OIDC token (requires: permissions: id-token: write)
     // GitHub docs: token is minted by token.actions.githubusercontent.com. :contentReference[oaicite:7]{index=7}
@@ -127,7 +124,7 @@ async function run(): Promise<void> {
       },
       inputs: {
         pulseowl_env: envSuffix || "",
-        config_path: configPathInput.trim() || "",
+        config_path: configPathInput,
       },
     };
 

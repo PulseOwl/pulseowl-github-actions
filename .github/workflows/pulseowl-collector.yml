@@ -10,10 +10,9 @@ on:
         type: string
         default: ""
       config-path:
-        description: "Optional path to PulseOwl config file in the repo."
+        description: "Optional path to PulseOwl config file. Defaults to .config/pulseowl/config.yml if blank."
         required: false
         type: string
-        default: ".config/pulseowl/config.yml"
 
   push:
     branches:
@@ -28,5 +27,5 @@ jobs:
     uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@collector-v1
     with:
       pulseowl-env: ${{ inputs.pulseowl-env || '' }}
-      config-path: ${{ inputs.config-path || '.config/pulseowl/config.yml' }}
+      config-path: ${{ inputs.config-path }}
       audience: "pulseowl"
