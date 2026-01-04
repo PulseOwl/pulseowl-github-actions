@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       pulseowl-env:
-        description: "Optional non-prod env suffix (e.g. staging, qa). Blank = prod."
+        description: "Advanced: PulseOwl backend environment. Leave empty unless instructed by support."
         required: false
         type: string
         default: ""
