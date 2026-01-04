@@ -1,0 +1,40 @@
+# Reusable Workflow for PulseOwl Collector Job
+name: PulseOwl Collector Job
+
+on:
+  workflow_call:
+    inputs:
+      pulseowl_env:
+        required: false
+        type: string
+        default: ""
+      config_path:
+        required: false
+        type: string
+        default: ""
+      audience:
+        required: false
+        type: string
+        default: "pulseowl"
+
+jobs:
+  collect:
+    runs-on: ubuntu-slim
+
+    concurrency:
+      group: pulseowl-collector-${{ github.repository }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run PulseOwl collector
+        uses: pulseowl/pulseowl-actions/actions/collector@collector-v1
+        with:
+          pulseowl_env: ${{ inputs.pulseowl_env }}
+          config_path: ${{ inputs.config_path }}
+          audience: ${{ inputs.audience }}

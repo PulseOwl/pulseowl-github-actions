@@ -1,0 +1,19 @@
+name: "PulseOwl Collector"
+description: "Collects repository metadata and posts it to PulseOwl using GitHub OIDC."
+inputs:
+  pulseowl_env:
+    description: "Optional env suffix (blank = prod)."
+    required: false
+    default: ""
+  config_path:
+    description: "Optional path to PulseOwl config file."
+    required: false
+    default: ""
+  audience:
+    description: "OIDC audience to request."
+    required: false
+    default: "pulseowl"
+
+runs:
+  using: "node24"
+  main: "dist/index.js"
