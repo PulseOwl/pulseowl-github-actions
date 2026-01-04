@@ -25,7 +25,7 @@ permissions:
 
 jobs:
   pulseowl:
-    uses: PulseOwl/pulseowl-actions/.github/workflows/collector.yml@collector-v1
+    uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@collector-v1
     with:
       pulseowl_env: ${{ inputs.pulseowl_env || '' }}
       config_path: ${{ inputs.config_path  || '.config/pulseowl/config.yml' }}
