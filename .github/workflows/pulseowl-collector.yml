@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       pulseowl-env:
-        description: "Optional non-prod env suffix (e.g. lcl, stg). Blank = prod."
+        description: "Optional non-prod env suffix (e.g. staging, qa). Blank = prod."
         required: false
         type: string
         default: ""
