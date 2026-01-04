@@ -1,5 +1,5 @@
-# Reusable Workflow for PulseOwl Collector Job
-name: PulseOwl Collector Job
+# Reusable Workflow for PulseOwl Collector Runner
+name: PulseOwl Collector Runner
 
 on:
   workflow_call:
