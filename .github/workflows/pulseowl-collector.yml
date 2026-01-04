@@ -1,5 +1,5 @@
 # Wrapper Workflow for PulseOwl Collector
-name: PulseOwl Collector Caller
+name: PulseOwl Collector
 
 on:
   workflow_dispatch:
