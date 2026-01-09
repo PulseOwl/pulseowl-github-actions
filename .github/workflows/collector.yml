@@ -20,6 +20,7 @@ on:
 jobs:
   collect:
     runs-on: ubuntu-slim
+    timeout-minutes: 5
 
     concurrency:
       group: pulseowl-collector-${{ github.repository }}
