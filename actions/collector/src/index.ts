@@ -22,7 +22,6 @@ function normalizeEnvSuffix(raw: string): EnvSuffix {
 }
 
 function integrationsBaseUrl(envSuffix: EnvSuffix): string {
-  // Blank suffix = prod
   if (!envSuffix) return "https://integrations.pulseowl.dev";
   return `https://integrations-${envSuffix}.pulseowl.dev`;
 }
@@ -96,7 +95,11 @@ async function run(): Promise<void> {
     const baseUrl = integrationsBaseUrl(envSuffix);
     const endpoint = `${baseUrl}/github/v1/collector-data`;
 
-    core.info(`PulseOwl env suffix: "${envSuffix || "prod"}"`);
+    core.info(
+      `PulseOwl env suffix: "${
+        envSuffix || "not provided, using default: prod"
+      }"`
+    );
     core.info(`PulseOwl endpoint: ${endpoint}`);
 
     const full = resolve(process.cwd(), configPathInput);
