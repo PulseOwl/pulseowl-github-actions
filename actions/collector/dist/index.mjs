@@ -17142,6 +17142,7 @@ var require_core = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#region src/index.ts
 var import_core = /* @__PURE__ */ __toESM(require_core(), 1);
 const VERSION = "1.0.0";
+const DEFAULT_CONFIG_PATH = ".config/pulseowl/config.yml";
 function normalizeEnvSuffix(raw) {
 	const v = raw.trim();
 	if (!v) return "";
@@ -17193,17 +17194,15 @@ async function postJsonWithRetry(url, token, payload, maxAttempts = 3) {
 async function run() {
 	try {
 		const envInput = import_core.getInput("pulseowl-env") ?? "";
-		const configPathInput = import_core.getInput("config-path") ?? "";
+		const configPathInput = (import_core.getInput("config-path") || "").trim() || DEFAULT_CONFIG_PATH;
 		const audience = (import_core.getInput("audience") ?? "pulseowl").trim() || "pulseowl";
 		const envSuffix = normalizeEnvSuffix(envInput);
 		const endpoint = `${integrationsBaseUrl(envSuffix)}/github/v1/collector-data`;
-		import_core.info(`PulseOwl env suffix: "${envSuffix || "prod"}"`);
+		import_core.info(`PulseOwl env suffix: "${envSuffix || "not provided, using default: prod"}"`);
 		import_core.info(`PulseOwl endpoint: ${endpoint}`);
-		if (configPathInput.trim()) {
-			const full = resolve(process.cwd(), configPathInput.trim());
-			const exists = existsSync(full);
-			import_core.info(`config_path: ${configPathInput.trim()} (resolved: ${full}) exists=${exists}`);
-		} else import_core.info("config_path: (not provided)");
+		const full = resolve(process.cwd(), configPathInput);
+		const exists = existsSync(full);
+		import_core.info(`config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`);
 		const res = await postJsonWithRetry(endpoint, await import_core.getIDToken(audience), {
 			kind: "pulseowl-collector-test",
 			timestamp: (/* @__PURE__ */ new Date()).toISOString(),
@@ -17219,7 +17218,7 @@ async function run() {
 			},
 			inputs: {
 				pulseowl_env: envSuffix || "",
-				config_path: configPathInput.trim() || ""
+				config_path: configPathInput
 			}
 		}, 3);
 		const text = await res.text();
