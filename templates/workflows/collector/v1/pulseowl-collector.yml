@@ -1,4 +1,3 @@
-# Wrapper Workflow for PulseOwl Collector
 name: PulseOwl Collector
 
 on:
