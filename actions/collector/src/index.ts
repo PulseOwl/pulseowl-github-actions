@@ -118,6 +118,8 @@ async function run(): Promise<void> {
       github: {
         repository: process.env.GITHUB_REPOSITORY,
         repository_id: process.env.GITHUB_REPOSITORY_ID,
+        repository_owner: process.env.GITHUB_REPOSITORY_OWNER,
+        repository_owner_id: process.env.GITHUB_REPOSITORY_OWNER_ID,
         run_id: process.env.GITHUB_RUN_ID,
         run_attempt: process.env.GITHUB_RUN_ATTEMPT,
         workflow: process.env.GITHUB_WORKFLOW,
