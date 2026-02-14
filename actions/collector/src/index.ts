@@ -1,151 +1,69 @@
 import * as core from "@actions/core";
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 
-type EnvSuffix = "" | string;
-
-const VERSION = "1.0.0";
-const DEFAULT_CONFIG_PATH = ".config/pulseowl/config.yml";
-
-function normalizeEnvSuffix(raw: string): EnvSuffix {
-  const v = raw.trim();
-  if (!v) return "";
-
-  // Allow only simple suffixes to avoid weird hostname construction.
-  // Examples: staging", "qa", etc.
-  if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(v)) {
-    throw new Error(
-      `Invalid pulseowl_env "${raw}". Allowed: lowercase letters, digits, hyphen (max 20 chars).`,
-    );
-  }
-  return v;
-}
-
-function integrationsBaseUrl(envSuffix: EnvSuffix): string {
-  if (!envSuffix) return "https://integrations.pulseowl.dev";
-  return `https://integrations-${envSuffix}.pulseowl.dev`;
-}
-
-function safeTruncate(s: string, max = 4000): string {
-  if (s.length <= max) return s;
-  return s.slice(0, max) + "…(truncated)";
-}
-
-async function sleep(ms: number) {
-  await new Promise((r) => setTimeout(r, ms));
-}
-
-async function postJsonWithRetry(
-  url: string,
-  token: string,
-  payload: unknown,
-  maxAttempts = 3,
-): Promise<Response> {
-  const body = JSON.stringify(payload);
-  let attempt = 0;
-
-  while (true) {
-    attempt += 1;
-
-    const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), 15_000);
-
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          authorization: `Bearer ${token}`,
-          "user-agent": `pulseowl-github-actions-collector/${VERSION}`,
-          "x-pulseowl-github-actions-collector-version": VERSION,
-        },
-        body,
-        signal: ac.signal,
-      });
-
-      // Retry on transient statuses
-      if (
-        (res.status === 429 || (res.status >= 500 && res.status <= 599)) &&
-        attempt < maxAttempts
-      ) {
-        const backoffMs = Math.min(2000 * attempt, 8000);
-        core.warning(
-          `PulseOwl API returned ${res.status}. Retrying in ~${backoffMs}ms (attempt ${attempt}/${maxAttempts})`,
-        );
-        await sleep(backoffMs);
-        continue;
-      }
-
-      return res;
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
-}
+import { ApiClient } from "./api-client";
+import { scanFiles } from "./file-scanner";
+import { getGithubContext, getOIDCToken } from "./github-context";
 
 async function run(): Promise<void> {
   try {
-    const envInput = core.getInput("pulseowl-env") ?? "";
-    const configPathInput =
-      (core.getInput("config-path") || "").trim() || DEFAULT_CONFIG_PATH;
-    const audience =
-      (core.getInput("audience") ?? "pulseowl").trim() || "pulseowl";
+    // Gather Inputs
+    const envSuffix = core.getInput("pulseowl-env") || "";
+    const configPath =
+      core.getInput("config-path") || ".config/pulseowl/config.yml";
+    const audience = core.getInput("audience") || "pulseowl";
 
-    const envSuffix = normalizeEnvSuffix(envInput);
-    const baseUrl = integrationsBaseUrl(envSuffix);
-    const endpoint = `${baseUrl}/github/v1/collector/config`;
+    // Auth & Context
+    const oidcToken = await getOIDCToken(audience);
+    const githubContext = getGithubContext();
 
-    core.info(
-      `PulseOwl env suffix: "${
-        envSuffix || "not provided, using default: prod"
-      }"`,
-    );
-    core.info(`PulseOwl endpoint: ${endpoint}`);
+    const apiClient = new ApiClient(envSuffix, oidcToken);
 
-    const full = resolve(process.cwd(), configPathInput);
-    const exists = existsSync(full);
-    core.info(
-      `config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`,
-    );
-
-    // Request OIDC token (requires: permissions: id-token: write)
-    // GitHub docs: token is minted by token.actions.githubusercontent.com. :contentReference[oaicite:7]{index=7}
-    const oidc = await core.getIDToken(audience);
-
-    const payload = {
+    // Prepare Base Payload
+    const basePayload = {
       timestamp: new Date().toISOString(),
-      github: {
-        repository: process.env.GITHUB_REPOSITORY,
-        repository_id: process.env.GITHUB_REPOSITORY_ID,
-        repository_owner: process.env.GITHUB_REPOSITORY_OWNER,
-        repository_owner_id: process.env.GITHUB_REPOSITORY_OWNER_ID,
-        run_id: process.env.GITHUB_RUN_ID,
-        run_attempt: process.env.GITHUB_RUN_ATTEMPT,
-        workflow: process.env.GITHUB_WORKFLOW,
-        ref: process.env.GITHUB_REF,
-        sha: process.env.GITHUB_SHA,
-        actor: process.env.GITHUB_ACTOR,
-      },
+      github: githubContext,
       inputs: {
-        pulseowl_env: envSuffix || "",
-        config_path: configPathInput,
+        pulseowl_env: envSuffix,
+        config_path: configPath,
       },
     };
 
-    const res = await postJsonWithRetry(endpoint, oidc, payload, 3);
-    const text = await res.text();
+    // Fetch Config
+    core.info("Fetching Collector Configuration...");
+    const configResponse = await apiClient.fetchConfig({
+      ...basePayload,
+      data: {}, // Empty data for config request
+    });
 
-    if (!res.ok) {
-      throw new Error(
-        `PulseOwl API error ${res.status}: ${safeTruncate(text)}`,
-      );
+    const rules = configResponse.data.rules;
+    core.info(`Received ${rules.length} collection rules.`);
+
+    if (rules.length === 0) {
+      core.info("No rules found. Exiting.");
+      return;
     }
 
-    core.info(
-      `PulseOwl API OK (${res.status}). Response: ${safeTruncate(text)}`,
-    );
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    // Collect Files
+    const allPatterns = rules.flatMap((r) => r.sourceFileGlobPatterns);
+    core.info(`Scanning files with patterns: ${JSON.stringify(allPatterns)}`);
+
+    const scannedFiles = await scanFiles(allPatterns);
+    core.info(`Scanned ${scannedFiles.length} files successfully.`);
+
+    // Ingest Data
+    if (scannedFiles.length > 0) {
+      core.info("Sending data to PulseOwl...");
+      await apiClient.sendIngest({
+        ...basePayload,
+        data: {
+          files: scannedFiles,
+        },
+      });
+    } else {
+      core.info("No matching files found to ingest.");
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     core.setFailed(msg);
   }
 }
