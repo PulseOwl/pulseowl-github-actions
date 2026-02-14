@@ -93,7 +93,7 @@ async function run(): Promise<void> {
 
     const envSuffix = normalizeEnvSuffix(envInput);
     const baseUrl = integrationsBaseUrl(envSuffix);
-    const endpoint = `${baseUrl}/github/v1/collector-data`;
+    const endpoint = `${baseUrl}/github/v1/collector/config`;
 
     core.info(
       `PulseOwl env suffix: "${
@@ -113,7 +113,6 @@ async function run(): Promise<void> {
     const oidc = await core.getIDToken(audience);
 
     const payload = {
-      kind: "pulseowl-collector-test",
       timestamp: new Date().toISOString(),
       github: {
         repository: process.env.GITHUB_REPOSITORY,

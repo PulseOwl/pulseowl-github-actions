@@ -17197,14 +17197,13 @@ async function run() {
 		const configPathInput = (import_core.getInput("config-path") || "").trim() || DEFAULT_CONFIG_PATH;
 		const audience = (import_core.getInput("audience") ?? "pulseowl").trim() || "pulseowl";
 		const envSuffix = normalizeEnvSuffix(envInput);
-		const endpoint = `${integrationsBaseUrl(envSuffix)}/github/v1/collector-data`;
+		const endpoint = `${integrationsBaseUrl(envSuffix)}/github/v1/collector/config`;
 		import_core.info(`PulseOwl env suffix: "${envSuffix || "not provided, using default: prod"}"`);
 		import_core.info(`PulseOwl endpoint: ${endpoint}`);
 		const full = resolve(process.cwd(), configPathInput);
 		const exists = existsSync(full);
 		import_core.info(`config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`);
 		const res = await postJsonWithRetry(endpoint, await import_core.getIDToken(audience), {
-			kind: "pulseowl-collector-test",
 			timestamp: (/* @__PURE__ */ new Date()).toISOString(),
 			github: {
 				repository: process.env.GITHUB_REPOSITORY,
