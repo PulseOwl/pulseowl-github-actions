@@ -15,7 +15,7 @@ function normalizeEnvSuffix(raw: string): EnvSuffix {
   // Examples: staging", "qa", etc.
   if (!/^[a-z0-9][a-z0-9-]{0,19}$/.test(v)) {
     throw new Error(
-      `Invalid pulseowl_env "${raw}". Allowed: lowercase letters, digits, hyphen (max 20 chars).`
+      `Invalid pulseowl_env "${raw}". Allowed: lowercase letters, digits, hyphen (max 20 chars).`,
     );
   }
   return v;
@@ -39,7 +39,7 @@ async function postJsonWithRetry(
   url: string,
   token: string,
   payload: unknown,
-  maxAttempts = 3
+  maxAttempts = 3,
 ): Promise<Response> {
   const body = JSON.stringify(payload);
   let attempt = 0;
@@ -70,7 +70,7 @@ async function postJsonWithRetry(
       ) {
         const backoffMs = Math.min(2000 * attempt, 8000);
         core.warning(
-          `PulseOwl API returned ${res.status}. Retrying in ~${backoffMs}ms (attempt ${attempt}/${maxAttempts})`
+          `PulseOwl API returned ${res.status}. Retrying in ~${backoffMs}ms (attempt ${attempt}/${maxAttempts})`,
         );
         await sleep(backoffMs);
         continue;
@@ -98,14 +98,14 @@ async function run(): Promise<void> {
     core.info(
       `PulseOwl env suffix: "${
         envSuffix || "not provided, using default: prod"
-      }"`
+      }"`,
     );
     core.info(`PulseOwl endpoint: ${endpoint}`);
 
     const full = resolve(process.cwd(), configPathInput);
     const exists = existsSync(full);
     core.info(
-      `config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`
+      `config-path: ${configPathInput} (resolved: ${full}) exists=${exists}`,
     );
 
     // Request OIDC token (requires: permissions: id-token: write)
@@ -136,12 +136,12 @@ async function run(): Promise<void> {
 
     if (!res.ok) {
       throw new Error(
-        `PulseOwl API error ${res.status}: ${safeTruncate(text)}`
+        `PulseOwl API error ${res.status}: ${safeTruncate(text)}`,
       );
     }
 
     core.info(
-      `PulseOwl API OK (${res.status}). Response: ${safeTruncate(text)}`
+      `PulseOwl API OK (${res.status}). Response: ${safeTruncate(text)}`,
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
