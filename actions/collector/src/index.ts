@@ -44,10 +44,8 @@ async function run(): Promise<void> {
     }
 
     // Collect Files
-    const allPatterns = rules.flatMap((r) => r.sourceFileGlobPatterns);
-    core.info(`Scanning files with patterns: ${JSON.stringify(allPatterns)}`);
-
-    const scannedFiles = await scanFiles(allPatterns);
+    core.info(`Scanning files for ${rules.length} rules...`);
+    const scannedFiles = await scanFiles(rules);
     core.info(`Scanned ${scannedFiles.length} files successfully.`);
 
     // Ingest Data

@@ -38,6 +38,7 @@ export const IngestFileSchema = z.object({
   path: z.string(),
   content: z.string(),
   contentHash: z.string(),
+  matchedRuleIds: z.array(z.string()).default([]),
 });
 
 export const IngestRequestSchema = BaseRequestSchema.extend({

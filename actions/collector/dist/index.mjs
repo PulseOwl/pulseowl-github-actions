@@ -20569,7 +20569,7 @@ const GithubContextSchema = object({
 	actor: string()
 });
 const BaseRequestSchema = object({
-	timestamp: string().datetime(),
+	timestamp: datetime(),
 	github: GithubContextSchema,
 	inputs: object({
 		pulseowl_env: string().optional(),
@@ -20584,7 +20584,8 @@ const CollectorConfigResponseSchema = object({ data: object({ rules: array(objec
 const IngestFileSchema = object({
 	path: string(),
 	content: string(),
-	contentHash: string()
+	contentHash: string(),
+	matchedRuleIds: array(string()).default([])
 });
 const IngestRequestSchema = BaseRequestSchema.extend({ data: object({ files: array(IngestFileSchema) }) });
 
@@ -23765,27 +23766,32 @@ Ze.glob = Ze;
 async function calculateSha256(content) {
 	return crypto.createHash("sha256").update(content).digest("hex");
 }
-async function scanFiles(patterns) {
-	const files = [];
-	const uniquePaths = /* @__PURE__ */ new Set();
-	for (const pattern of patterns) try {
-		(await Ze(pattern, { nodir: true })).forEach((m) => uniquePaths.add(m));
+async function scanFiles(rules) {
+	const fileRulesMap = /* @__PURE__ */ new Map();
+	for (const rule of rules) for (const pattern of rule.sourceFileGlobPatterns) try {
+		const matches = await Ze(pattern, { nodir: true });
+		for (const filePath of matches) {
+			if (!fileRulesMap.has(filePath)) fileRulesMap.set(filePath, /* @__PURE__ */ new Set());
+			fileRulesMap.get(filePath)?.add(rule.id);
+		}
 	} catch (err) {
-		import_core.warning(`Error globbing pattern ${pattern}: ${err}`);
+		import_core.warning(`Error globbing pattern ${pattern} for rule ${rule.id}: ${err}`);
 	}
-	import_core.info(`Found ${uniquePaths.size} unique files to scan.`);
-	for (const filePath of uniquePaths) try {
+	import_core.info(`Found ${fileRulesMap.size} unique files to scan.`);
+	const results = [];
+	for (const [filePath, ruleIds] of fileRulesMap) try {
 		const content = await fs.readFile(filePath, "utf-8");
 		const contentHash = await calculateSha256(content);
-		files.push({
+		results.push({
 			path: filePath,
 			content,
-			contentHash
+			contentHash,
+			matchedRuleIds: Array.from(ruleIds)
 		});
 	} catch (err) {
 		import_core.warning(`Failed to read file ${filePath}: ${err}`);
 	}
-	return files;
+	return results;
 }
 
 //#endregion
@@ -23840,9 +23846,8 @@ async function run() {
 			import_core.info("No rules found. Exiting.");
 			return;
 		}
-		const allPatterns = rules.flatMap((r) => r.sourceFileGlobPatterns);
-		import_core.info(`Scanning files with patterns: ${JSON.stringify(allPatterns)}`);
-		const scannedFiles = await scanFiles(allPatterns);
+		import_core.info(`Scanning files for ${rules.length} rules...`);
+		const scannedFiles = await scanFiles(rules);
 		import_core.info(`Scanned ${scannedFiles.length} files successfully.`);
 		if (scannedFiles.length > 0) {
 			import_core.info("Sending data to PulseOwl...");
