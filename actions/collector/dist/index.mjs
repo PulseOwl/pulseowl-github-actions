@@ -23763,13 +23763,29 @@ Ze.glob = Ze;
 
 //#endregion
 //#region src/file-scanner.ts
+const DEFAULT_IGNORE_PATTERNS = [
+	"**/.git/**",
+	"**/node_modules/**",
+	"**/__pycache__/**",
+	"**/.venv/**",
+	"**/venv/**",
+	"**/vendor/bundle/**",
+	"**/.gradle/**",
+	"**/.idea/**",
+	"**/.vscode/**",
+	"**/.vs/**",
+	"**/.DS_Store"
+];
 async function calculateSha256(content) {
 	return crypto.createHash("sha256").update(content).digest("hex");
 }
 async function scanFiles(rules) {
 	const fileRulesMap = /* @__PURE__ */ new Map();
 	for (const rule of rules) for (const pattern of rule.sourceFileGlobPatterns) try {
-		const matches = await Ze(pattern, { nodir: true });
+		const matches = await Ze(pattern, {
+			nodir: true,
+			ignore: DEFAULT_IGNORE_PATTERNS
+		});
 		for (const filePath of matches) {
 			if (!fileRulesMap.has(filePath)) fileRulesMap.set(filePath, /* @__PURE__ */ new Set());
 			fileRulesMap.get(filePath)?.add(rule.id);
