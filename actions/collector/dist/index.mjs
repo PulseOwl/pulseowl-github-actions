@@ -23877,7 +23877,7 @@ async function getOIDCToken(audience) {
 }
 
 //#endregion
-//#region src/index.ts
+//#region src/main.ts
 async function run() {
 	try {
 		const envSuffix = import_core.getInput("pulseowl-env") || "";
@@ -23924,6 +23924,9 @@ async function run() {
 		import_core.setFailed(msg);
 	}
 }
+
+//#endregion
+//#region src/index.ts
 await run();
 
 //#endregion
