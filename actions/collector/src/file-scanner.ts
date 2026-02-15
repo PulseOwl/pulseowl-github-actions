@@ -2,6 +2,7 @@ import * as core from "@actions/core";
 import { glob } from "glob";
 import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
+import * as path from "node:path";
 
 export interface ScannedFile {
   path: string;
@@ -15,21 +16,19 @@ export interface ScanningRule {
   sourceFileGlobPatterns: string[];
 }
 
-// Defines a list of directories and files to universally ignore during scanning
-// to prevent picking up build artifacts, dependencies, and system files.
-// We only include high-confidence patterns here to avoid false positives.
-const DEFAULT_IGNORE_PATTERNS = [
+// Base ignores that are always safe (high confidence)
+const BASE_IGNORE_PATTERNS = [
   // Version Control
   "**/.git/**",
 
-  // Dependencies & Environments (High Confidence)
+  // Dependencies & Environments
   "**/node_modules/**", // Node.js
   "**/__pycache__/**", // Python
   "**/.venv/**", // Python
   "**/venv/**", // Python
   "**/vendor/bundle/**", // Ruby Bundler
 
-  // Build Artifacts (High Confidence)
+  // Build Artifacts
   "**/.gradle/**", // Gradle
 
   // IDEs & System
@@ -39,20 +38,78 @@ const DEFAULT_IGNORE_PATTERNS = [
   "**/.DS_Store",
 ];
 
+/**
+ * Calculates the SHA-256 hash of the given content.
+ *
+ * @param content - The content to hash.
+ * @returns The SHA-256 hash of the content.
+ */
 export async function calculateSha256(content: string): Promise<string> {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
+/**
+ * Detects project-specific vendor directories (like Go modules)
+ * and returns specific ignore patterns for them.
+ */
+async function detectVendorIgnores(): Promise<string[]> {
+  const specificIgnores: string[] = [];
+
+  try {
+    // 1. Go Modules: Find all go.mod files
+    // Go vendor directories MUST be in the same directory as go.mod
+    const goModFiles = await glob("**/go.mod", {
+      ignore: BASE_IGNORE_PATTERNS,
+      nodir: true,
+      maxDepth: 5, // Limit depth to avoid scanning massive trees unnecessarily
+    });
+
+    if (goModFiles.length > 0) {
+      core.info(
+        `Detected ${goModFiles.length} Go module(s). Configuring vendor ignores.`,
+      );
+
+      for (const goModFile of goModFiles) {
+        const dir = path.dirname(goModFile);
+        // If dir is '.', it means root. pattern is 'vendor/**'
+        // If dir is 'sub/dir', pattern is 'sub/dir/vendor/**'
+        const vendorPattern = dir === "." ? "vendor/**" : `${dir}/vendor/**`;
+        specificIgnores.push(vendorPattern);
+      }
+    }
+  } catch (err) {
+    core.warning(`Error detecting project structure: ${err}`);
+  }
+
+  if (specificIgnores.length > 0) {
+    core.info(
+      `Ignoring detected vendor directories: ${JSON.stringify(specificIgnores)}`,
+    );
+  }
+
+  return specificIgnores;
+}
+
+/**
+ * Scans files for matching rules and returns a list of scanned files.
+ *
+ * @param rules - The rules to scan for.
+ * @returns A list of scanned files.
+ */
 export async function scanFiles(rules: ScanningRule[]): Promise<ScannedFile[]> {
+  // Calculate dynamic ignore list
+  const dynamicIgnores = await detectVendorIgnores();
+  const allIgnores = [...BASE_IGNORE_PATTERNS, ...dynamicIgnores];
+
   const fileRulesMap = new Map<string, Set<string>>();
 
-  // 1. Map files to rules
+  // Map files to rules
   for (const rule of rules) {
     for (const pattern of rule.sourceFileGlobPatterns) {
       try {
         const matches = await glob(pattern, {
           nodir: true,
-          ignore: DEFAULT_IGNORE_PATTERNS,
+          ignore: allIgnores,
         });
         for (const filePath of matches) {
           if (!fileRulesMap.has(filePath)) {
@@ -72,7 +129,7 @@ export async function scanFiles(rules: ScanningRule[]): Promise<ScannedFile[]> {
 
   const results: ScannedFile[] = [];
 
-  // 2. Read content, hash, and build result
+  // Read content, hash, and build result
   for (const [filePath, ruleIds] of fileRulesMap) {
     try {
       const content = await fs.readFile(filePath, "utf-8");
