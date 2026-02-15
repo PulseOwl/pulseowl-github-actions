@@ -23898,14 +23898,20 @@ async function run() {
 			...basePayload,
 			data: {}
 		})).data.rules;
-		import_core.info(`Received ${rules.length} collection rules.`);
+		import_core.startGroup(`Received ${rules.length} collection rules`);
+		if (rules.length === 0) import_core.info("No rules found.");
+		else for (const rule of rules) import_core.info(`- ${rule.name} (ID: ${rule.id})`);
+		import_core.endGroup();
 		if (rules.length === 0) {
-			import_core.info("No rules found. Exiting.");
+			import_core.info("Exiting.");
 			return;
 		}
 		import_core.info(`Scanning files for ${rules.length} rules...`);
 		const scannedFiles = await scanFiles(rules);
-		import_core.info(`Scanned ${scannedFiles.length} files successfully.`);
+		import_core.startGroup(`Found ${scannedFiles.length} unique files to scan`);
+		if (scannedFiles.length === 0) import_core.info("No matching files found.");
+		else for (const file of scannedFiles) import_core.info(`- ${file.path}`);
+		import_core.endGroup();
 		if (scannedFiles.length > 0) {
 			import_core.info("Sending data to PulseOwl...");
 			await apiClient.sendIngest({

@@ -36,17 +36,35 @@ async function run(): Promise<void> {
     });
 
     const rules = configResponse.data.rules;
-    core.info(`Received ${rules.length} collection rules.`);
+
+    core.startGroup(`Received ${rules.length} collection rules`);
+    if (rules.length === 0) {
+      core.info("No rules found.");
+    } else {
+      for (const rule of rules) {
+        core.info(`- ${rule.name} (ID: ${rule.id})`);
+      }
+    }
+    core.endGroup();
 
     if (rules.length === 0) {
-      core.info("No rules found. Exiting.");
+      core.info("Exiting.");
       return;
     }
 
     // Collect Files
     core.info(`Scanning files for ${rules.length} rules...`);
     const scannedFiles = await scanFiles(rules);
-    core.info(`Scanned ${scannedFiles.length} files successfully.`);
+
+    core.startGroup(`Found ${scannedFiles.length} unique files to scan`);
+    if (scannedFiles.length === 0) {
+      core.info("No matching files found.");
+    } else {
+      for (const file of scannedFiles) {
+        core.info(`- ${file.path}`);
+      }
+    }
+    core.endGroup();
 
     // Ingest Data
     if (scannedFiles.length > 0) {
