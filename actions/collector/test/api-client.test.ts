@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as core from "@actions/core";
+import * as zlib from "node:zlib";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiClient } from "../src/api-client";
 
@@ -109,6 +110,49 @@ describe("ApiClient", () => {
 
       await expect(client.sendIngest({})).rejects.toThrow(
         "Failed to ingest data: 400 Bad Request",
+      );
+    });
+
+    it("should gzip large payloads", async () => {
+      const largePayload = { data: "x".repeat(1500) }; // > 1024 bytes
+      const jsonString = JSON.stringify(largePayload);
+      const compressed = zlib.gzipSync(jsonString);
+
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await client.sendIngest(largePayload);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "content-encoding": "gzip",
+            "content-type": "application/json",
+          }),
+          body: compressed,
+        }),
+      );
+    });
+
+    it("should not gzip small payloads", async () => {
+      const smallPayload = { data: "x" }; // < 1024 bytes
+
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+      });
+
+      await client.sendIngest(smallPayload);
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.not.objectContaining({
+            "content-encoding": "gzip",
+          }),
+          body: JSON.stringify(smallPayload),
+        }),
       );
     });
   });

@@ -1,4 +1,5 @@
 import * as core from "@actions/core";
+import * as zlib from "node:zlib";
 
 import {
   CollectorConfigResponseSchema,
@@ -25,7 +26,21 @@ export class ApiClient {
     payload: unknown,
     maxAttempts = 3,
   ): Promise<Response> {
-    const body = JSON.stringify(payload);
+    const jsonString = JSON.stringify(payload);
+    let body: BodyInit | null | undefined = jsonString;
+    const headers: Record<string, string> = {
+      "content-type": "application/json",
+      authorization: `Bearer ${this.token}`,
+      "user-agent": this.userAgent,
+      "x-pulseowl-github-actions-collector-version": VERSION,
+    };
+
+    // Compress if larger than 1KB
+    if (jsonString.length > 1024) {
+      body = zlib.gzipSync(jsonString);
+      headers["content-encoding"] = "gzip";
+    }
+
     let attempt = 0;
 
     while (attempt < maxAttempts) {
@@ -36,12 +51,7 @@ export class ApiClient {
       try {
         const res = await fetch(url, {
           method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${this.token}`,
-            "user-agent": this.userAgent,
-            "x-pulseowl-github-actions-collector-version": VERSION,
-          },
+          headers,
           body,
           signal: ac.signal,
         });

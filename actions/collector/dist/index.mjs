@@ -3,6 +3,7 @@ import { lstatSync, readdir, readdirSync, readlinkSync, realpathSync } from "fs"
 import Pe from "node:stream";
 import { EventEmitter } from "node:events";
 import * as crypto from "node:crypto";
+import * as zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 import * as path from "node:path";
 import { posix, win32 } from "node:path";
@@ -10863,7 +10864,7 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	const { Response, makeNetworkError, makeAppropriateNetworkError, filterResponse, makeResponse } = require_response();
 	const { Headers } = require_headers();
 	const { Request, makeRequest } = require_request();
-	const zlib = __require("zlib");
+	const zlib$1 = __require("zlib");
 	const { bytesMatch, makePolicyContainer, clonePolicyContainer, requestBadPort, TAOCheck, appendRequestOriginHeader, responseLocationURL, requestCurrentURL, setRequestReferrerPolicyOnRedirect, tryUpgradeRequestToAPotentiallyTrustworthyURL, createOpaqueTimingInfo, appendFetchMetadata, corsCheck, crossOriginResourcePolicyCheck, determineRequestsReferrer, coarsenedSharedCurrentTime, createDeferredPromise, isBlobLike, sameOrigin, isCancelled, isAborted, isErrorLike, fullyReadBody, readableStreamClose, isomorphicEncode, urlIsLocal, urlIsHttpHttpsScheme, urlHasHttpsScheme } = require_util$5();
 	const { kState, kHeaders, kGuard, kRealm } = require_symbols$3();
 	const assert$3 = __require("assert");
@@ -11470,12 +11471,12 @@ var require_fetch = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 					this.body = new Readable({ read: resume });
 					const decoders = [];
 					const willFollow = request.redirect === "follow" && location && redirectStatusSet.has(status);
-					if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) for (const coding of codings) if (coding === "x-gzip" || coding === "gzip") decoders.push(zlib.createGunzip({
-						flush: zlib.constants.Z_SYNC_FLUSH,
-						finishFlush: zlib.constants.Z_SYNC_FLUSH
+					if (request.method !== "HEAD" && request.method !== "CONNECT" && !nullBodyStatus.includes(status) && !willFollow) for (const coding of codings) if (coding === "x-gzip" || coding === "gzip") decoders.push(zlib$1.createGunzip({
+						flush: zlib$1.constants.Z_SYNC_FLUSH,
+						finishFlush: zlib$1.constants.Z_SYNC_FLUSH
 					}));
-					else if (coding === "deflate") decoders.push(zlib.createInflate());
-					else if (coding === "br") decoders.push(zlib.createBrotliDecompress());
+					else if (coding === "deflate") decoders.push(zlib$1.createInflate());
+					else if (coding === "br") decoders.push(zlib$1.createBrotliDecompress());
 					else {
 						decoders.length = 0;
 						break;
@@ -20603,7 +20604,18 @@ var ApiClient = class {
 		this.userAgent = `pulseowl-github-actions-collector/${VERSION}`;
 	}
 	async fetchWithRetry(url, payload, maxAttempts = 3) {
-		const body = JSON.stringify(payload);
+		const jsonString = JSON.stringify(payload);
+		let body = jsonString;
+		const headers = {
+			"content-type": "application/json",
+			authorization: `Bearer ${this.token}`,
+			"user-agent": this.userAgent,
+			"x-pulseowl-github-actions-collector-version": VERSION
+		};
+		if (jsonString.length > 1024) {
+			body = zlib.gzipSync(jsonString);
+			headers["content-encoding"] = "gzip";
+		}
 		let attempt = 0;
 		while (attempt < maxAttempts) {
 			attempt++;
@@ -20612,12 +20624,7 @@ var ApiClient = class {
 			try {
 				const res = await fetch(url, {
 					method: "POST",
-					headers: {
-						"content-type": "application/json",
-						authorization: `Bearer ${this.token}`,
-						"user-agent": this.userAgent,
-						"x-pulseowl-github-actions-collector-version": VERSION
-					},
+					headers,
 					body,
 					signal: ac.signal
 				});
