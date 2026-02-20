@@ -202,13 +202,27 @@ describe("ApiClient", () => {
 
       await client.sendIngest(smallPayload);
 
+      // 1. Verify general structure and required headers
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            "content-type": "application/json",
+            "x-pulseowl-github-actions-collector-version": expect.any(String),
+            authorization: `Bearer ${token}`,
+            "user-agent": expect.any(String),
+          }),
+          body: JSON.stringify(smallPayload),
+        }),
+      );
+
+      // 2. Verify gzip is NOT present
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           headers: expect.not.objectContaining({
             "content-encoding": "gzip",
           }),
-          body: JSON.stringify(smallPayload),
         }),
       );
     });
