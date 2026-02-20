@@ -184,6 +184,9 @@ describe("ApiClient", () => {
           headers: expect.objectContaining({
             "content-encoding": "gzip",
             "content-type": "application/json",
+            "x-pulseowl-github-actions-collector-version": expect.any(String),
+            authorization: `Bearer ${token}`,
+            "user-agent": expect.any(String),
           }),
           body: compressed,
         }),

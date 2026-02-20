@@ -1,12 +1,13 @@
 import * as core from "@actions/core";
 import * as zlib from "node:zlib";
+import pkg from "../package.json";
 
 import {
   CollectorConfigResponseSchema,
   CollectorConfigResponse,
 } from "./schemas";
 
-const VERSION = "1.0.0"; // Should ideally come from package.json
+const VERSION = pkg.version;
 
 export class ApiClient {
   private baseUrl: string;
