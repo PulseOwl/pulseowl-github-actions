@@ -83,6 +83,53 @@ describe("ApiClient", () => {
       expect(global.fetch).toHaveBeenCalledTimes(3);
       vi.useRealTimers();
     });
+
+    it("should retry on network error and succeed eventually", async () => {
+      vi.useFakeTimers();
+
+      // First call throws (Network Error), second call succeeds
+      (global.fetch as any)
+        .mockRejectedValueOnce(new Error("Network Error"))
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: { rules: [] } }), // Valid response
+        });
+
+      const promise = client.fetchConfig({});
+
+      // Advance timers to get past the setTimeout in the catch block
+      await vi.runAllTimersAsync();
+
+      const config = await promise;
+
+      expect(config).toBeDefined();
+      expect(global.fetch).toHaveBeenCalledTimes(2); // 1 failure + 1 success
+      vi.useRealTimers();
+    });
+
+    it("should throw the network error after max attempts", async () => {
+      vi.useFakeTimers();
+
+      // Always fails with Network Error
+      (global.fetch as any).mockRejectedValue(
+        new Error("Persistent Network Error"),
+      );
+
+      const promise = client.fetchConfig({});
+      const assertion = expect(promise).rejects.toThrow(
+        "Persistent Network Error",
+      );
+
+      // Fast-forward through all retries
+      await vi.runAllTimersAsync();
+
+      // Should reject with the LAST error thrown
+      await assertion;
+
+      // Should have tried 3 times (default maxAttempts)
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      vi.useRealTimers();
+    });
   });
 
   describe("sendIngest", () => {
