@@ -74,12 +74,15 @@ export class ApiClient {
         clearTimeout(timeout);
       }
     }
-    throw new Error("Max retry attempts reached");
+    throw new Error("Invalid maxAttempts: must be at least 1");
   }
 
-  async fetchConfig(payload: unknown): Promise<CollectorConfigResponse> {
+  async fetchConfig(
+    payload: unknown,
+    maxAttempts?: number,
+  ): Promise<CollectorConfigResponse> {
     const url = `${this.baseUrl}/github/v1/collector/config`;
-    const res = await this.fetchWithRetry(url, payload);
+    const res = await this.fetchWithRetry(url, payload, maxAttempts);
 
     if (!res.ok) {
       throw new Error(
@@ -91,9 +94,9 @@ export class ApiClient {
     return CollectorConfigResponseSchema.parse(json);
   }
 
-  async sendIngest(payload: unknown): Promise<void> {
+  async sendIngest(payload: unknown, maxAttempts?: number): Promise<void> {
     const url = `${this.baseUrl}/github/v1/collector/ingest`;
-    const res = await this.fetchWithRetry(url, payload);
+    const res = await this.fetchWithRetry(url, payload, maxAttempts);
 
     if (!res.ok) {
       throw new Error(

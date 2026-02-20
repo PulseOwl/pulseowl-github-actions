@@ -26,8 +26,6 @@ describe("ApiClient", () => {
 
   describe("constructor", () => {
     it("should set the correct base URL for staging", () => {
-      // Access private property for testing if needed, or check behavior
-      // Since baseUrl is private, we can verify it indirectly via fetch calls
       expect(client).toBeDefined();
     });
 
@@ -129,6 +127,15 @@ describe("ApiClient", () => {
       // Should have tried 3 times (default maxAttempts)
       expect(global.fetch).toHaveBeenCalledTimes(3);
       vi.useRealTimers();
+    });
+
+    it("should throw error if maxAttempts is less than 1", async () => {
+      await expect(client.fetchConfig({}, 0)).rejects.toThrow(
+        "Invalid maxAttempts: must be at least 1",
+      );
+
+      // Verify fetch was never called since the loop never runs
+      expect(global.fetch).not.toHaveBeenCalled();
     });
   });
 
