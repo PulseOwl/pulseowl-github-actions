@@ -16702,20 +16702,20 @@ var require_platform = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const os_1 = __importDefault(__require("os"));
 	const exec = __importStar(require_exec());
 	const getWindowsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
-		const { stdout: version$1 } = yield exec.getExecOutput("powershell -command \"(Get-CimInstance -ClassName Win32_OperatingSystem).Version\"", void 0, { silent: true });
+		const { stdout: version$2 } = yield exec.getExecOutput("powershell -command \"(Get-CimInstance -ClassName Win32_OperatingSystem).Version\"", void 0, { silent: true });
 		const { stdout: name } = yield exec.getExecOutput("powershell -command \"(Get-CimInstance -ClassName Win32_OperatingSystem).Caption\"", void 0, { silent: true });
 		return {
 			name: name.trim(),
-			version: version$1.trim()
+			version: version$2.trim()
 		};
 	});
 	const getMacOsInfo = () => __awaiter(void 0, void 0, void 0, function* () {
 		var _a$1, _b, _c, _d;
 		const { stdout } = yield exec.getExecOutput("sw_vers", void 0, { silent: true });
-		const version$1 = (_b = (_a$1 = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a$1 === void 0 ? void 0 : _a$1[1]) !== null && _b !== void 0 ? _b : "";
+		const version$2 = (_b = (_a$1 = stdout.match(/ProductVersion:\s*(.+)/)) === null || _a$1 === void 0 ? void 0 : _a$1[1]) !== null && _b !== void 0 ? _b : "";
 		return {
 			name: (_d = (_c = stdout.match(/ProductName:\s*(.+)/)) === null || _c === void 0 ? void 0 : _c[1]) !== null && _d !== void 0 ? _d : "",
-			version: version$1
+			version: version$2
 		};
 	});
 	const getLinuxInfo = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -16724,10 +16724,10 @@ var require_platform = /* @__PURE__ */ __commonJSMin(((exports) => {
 			"-r",
 			"-s"
 		], { silent: true });
-		const [name, version$1] = stdout.trim().split("\n");
+		const [name, version$2] = stdout.trim().split("\n");
 		return {
 			name,
-			version: version$1
+			version: version$2
 		};
 	});
 	exports.platform = os_1.default.platform();
@@ -17147,6 +17147,11 @@ var require_core = /* @__PURE__ */ __commonJSMin(((exports) => {
 	*/
 	exports.platform = __importStar(require_platform());
 }));
+
+//#endregion
+//#region package.json
+var import_core = /* @__PURE__ */ __toESM(require_core(), 1);
+var version$1 = "1.0.0";
 
 //#endregion
 //#region node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js
@@ -17688,9 +17693,9 @@ const guid = /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9
 /** Returns a regex for validating an RFC 9562/4122 UUID.
 *
 * @param version Optionally specify a version 1-8. If no version is specified, all versions are supported. */
-const uuid = (version$1) => {
-	if (!version$1) return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
-	return /* @__PURE__ */ new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version$1}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
+const uuid = (version$2) => {
+	if (!version$2) return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+	return /* @__PURE__ */ new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version$2}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
 };
 /** Practical email validation */
 const email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
@@ -20557,7 +20562,6 @@ const meta = meta$1;
 
 //#endregion
 //#region src/schemas.ts
-var import_core = /* @__PURE__ */ __toESM(require_core(), 1);
 const GithubContextSchema = object({
 	repository: string(),
 	repository_id: string(),
@@ -20593,7 +20597,7 @@ const IngestRequestSchema = BaseRequestSchema.extend({ data: object({ files: arr
 
 //#endregion
 //#region src/api-client.ts
-const VERSION = "1.0.0";
+const VERSION = version$1;
 var ApiClient = class {
 	baseUrl;
 	token;
@@ -20642,18 +20646,18 @@ var ApiClient = class {
 				clearTimeout(timeout);
 			}
 		}
-		throw new Error("Max retry attempts reached");
+		throw new Error("Invalid maxAttempts: must be at least 1");
 	}
-	async fetchConfig(payload) {
+	async fetchConfig(payload, maxAttempts) {
 		const url = `${this.baseUrl}/github/v1/collector/config`;
-		const res = await this.fetchWithRetry(url, payload);
+		const res = await this.fetchWithRetry(url, payload, maxAttempts);
 		if (!res.ok) throw new Error(`Failed to fetch config: ${res.status} ${await res.text()}`);
 		const json = await res.json();
 		return CollectorConfigResponseSchema.parse(json);
 	}
-	async sendIngest(payload) {
+	async sendIngest(payload, maxAttempts) {
 		const url = `${this.baseUrl}/github/v1/collector/ingest`;
-		const res = await this.fetchWithRetry(url, payload);
+		const res = await this.fetchWithRetry(url, payload, maxAttempts);
 		if (!res.ok) throw new Error(`Failed to ingest data: ${res.status} ${await res.text()}`);
 		import_core.info("Successfully ingested data to PulseOwl.");
 	}
