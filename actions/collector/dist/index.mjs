@@ -23694,6 +23694,32 @@ function getGithubContext() {
 		actor: process.env.GITHUB_ACTOR || ""
 	};
 }
+function getEventTimestamp() {
+	const eventPath = process.env.GITHUB_EVENT_PATH;
+	if (eventPath && fs$2.existsSync(eventPath)) try {
+		const event = JSON.parse(fs$2.readFileSync(eventPath, "utf8"));
+		if (event.head_commit?.timestamp) {
+			info(`Using commit timestamp: ${event.head_commit.timestamp}`);
+			return event.head_commit.timestamp;
+		}
+		if (event.pull_request?.updated_at) {
+			info(`Using pull request updated timestamp: ${event.pull_request.updated_at}`);
+			return event.pull_request.updated_at;
+		}
+		if (event.release?.created_at) {
+			info(`Using release created timestamp: ${event.release.created_at}`);
+			return event.release.created_at;
+		}
+		if (event.created_at) {
+			info(`Using created timestamp: ${event.created_at}`);
+			return event.created_at;
+		}
+	} catch (error$1) {
+		warning(`Failed to parse event payload: ${error$1}`);
+	}
+	info("No specific timestamp found, using current time");
+	return (/* @__PURE__ */ new Date()).toISOString();
+}
 async function getOIDCToken(audience) {
 	try {
 		return await getIDToken(audience);
@@ -23713,7 +23739,7 @@ async function run() {
 		const githubContext = getGithubContext();
 		const apiClient = new ApiClient(envSuffix, oidcToken);
 		const basePayload = {
-			timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+			timestamp: getEventTimestamp(),
 			github: githubContext,
 			inputs: {
 				pulseowl_env: envSuffix,
