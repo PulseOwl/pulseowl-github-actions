@@ -2,7 +2,11 @@ import * as core from "@actions/core";
 
 import { ApiClient } from "./api-client";
 import { scanFiles } from "./file-scanner";
-import { getGithubContext, getOIDCToken } from "./github-context";
+import {
+  getEventTimestamp,
+  getGithubContext,
+  getOIDCToken,
+} from "./github-context";
 
 export async function run(): Promise<void> {
   try {
@@ -20,7 +24,7 @@ export async function run(): Promise<void> {
 
     // Prepare Base Payload
     const basePayload = {
-      timestamp: new Date().toISOString(),
+      timestamp: getEventTimestamp(),
       github: githubContext,
       inputs: {
         pulseowl_env: envSuffix,
