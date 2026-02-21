@@ -14,7 +14,7 @@ export const GithubContextSchema = z.object({
 });
 
 export const BaseRequestSchema = z.object({
-  timestamp: z.iso.datetime({ offset: true }),
+  timestamp: z.iso.datetime(),
   github: GithubContextSchema,
   inputs: z.object({
     pulseowl_env: z.string().optional(),

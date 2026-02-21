@@ -25,55 +25,51 @@ export function getEventTimestamp(): string {
   if (eventPath && fs.existsSync(eventPath)) {
     try {
       const event = JSON.parse(fs.readFileSync(eventPath, "utf8"));
+      let rawTimestamp: string | undefined;
 
-      // For 'push' events: use the commit timestamp
+      // Identify the raw timestamp based on event type
       if (event.head_commit?.timestamp) {
         core.info(`Using commit timestamp: ${event.head_commit.timestamp}`);
-        return event.head_commit.timestamp;
-      }
-
-      // For 'pull_request' events: use the last update time
-      if (event.pull_request?.updated_at) {
+        rawTimestamp = event.head_commit.timestamp;
+      } else if (event.pull_request?.updated_at) {
         core.info(
-          `Using pull request updated timestamp: ${event.pull_request.updated_at}`,
+          `Using PR updated timestamp: ${event.pull_request.updated_at}`,
         );
-        return event.pull_request.updated_at;
-      }
-
-      // For 'release' events
-      if (event.release?.created_at) {
+        rawTimestamp = event.pull_request.updated_at;
+      } else if (event.release?.created_at) {
         core.info(
           `Using release created timestamp: ${event.release.created_at}`,
         );
-        return event.release.created_at;
-      }
-
-      // Explicitly handle workflow_dispatch and schedule
-      if (eventName === "workflow_dispatch" || eventName === "schedule") {
-        core.info(
-          `Event is '${eventName}', using current execution time as trigger time.`,
-        );
+        rawTimestamp = event.release.created_at;
+      } else if (
+        eventName === "workflow_dispatch" ||
+        eventName === "schedule"
+      ) {
+        core.info(`Event is '${eventName}', using current time.`);
         return new Date().toISOString();
-      }
-
-      // For other events, try to find a created_at
-      if (event.created_at) {
+      } else if (event.created_at) {
         core.info(`Using created timestamp: ${event.created_at}`);
-        return event.created_at;
+        rawTimestamp = event.created_at;
       }
 
-      // Debugging: If we are here, we missed a timestamp.
+      // Normalize to ISO string if we found a timestamp
+      if (rawTimestamp) {
+        try {
+          return new Date(rawTimestamp).toISOString();
+        } catch (e) {
+          core.warning(`Failed to parse timestamp '${rawTimestamp}': ${e}`);
+        }
+      }
+
       core.debug(
-        `No timestamp found in event payload. Event: ${eventName}. Keys: ${Object.keys(
-          event,
-        ).join(", ")}`,
+        `No timestamp found in event payload. Event: ${eventName}. Keys: ${Object.keys(event).join(", ")}`,
       );
     } catch (error) {
       core.warning(`Failed to parse event payload: ${error}`);
     }
   }
 
-  // Fallback if no specific timestamp found
+  // Default to current time if no timestamp is found
   core.info("No specific timestamp found, using current time");
   return new Date().toISOString();
 }
