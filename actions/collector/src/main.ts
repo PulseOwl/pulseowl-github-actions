@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 
 import { ApiClient } from "./api-client";
+import { shouldFailOnError } from "./errors";
 import { scanFiles } from "./file-scanner";
 import {
   getEventTimestamp,
@@ -84,6 +85,13 @@ export async function run(): Promise<void> {
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    core.setFailed(msg);
+
+    if (shouldFailOnError(error)) {
+      // Fail on configuration/auth/validation errors
+      core.setFailed(msg);
+    } else {
+      // Warn on transient/server errors - don't break the user's workflow
+      core.warning(`PulseOwl collection skipped: ${msg}`);
+    }
   }
 }

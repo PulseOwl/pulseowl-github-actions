@@ -2,9 +2,10 @@ import * as core from "@actions/core";
 import * as zlib from "node:zlib";
 import pkg from "../package.json";
 
+import { ApiError } from "./errors";
 import {
-  CollectorConfigResponseSchema,
   CollectorConfigResponse,
+  CollectorConfigResponseSchema,
 } from "./schemas";
 
 const VERSION = pkg.version;
@@ -86,8 +87,10 @@ export class ApiClient {
     const res = await this.fetchWithRetry(url, payload, maxAttempts);
 
     if (!res.ok) {
-      throw new Error(
-        `Failed to fetch config: ${res.status} ${await res.text()}`,
+      const errorText = await res.text();
+      throw new ApiError(
+        `Failed to fetch config: ${res.status} ${errorText}`,
+        res.status,
       );
     }
 
@@ -100,8 +103,10 @@ export class ApiClient {
     const res = await this.fetchWithRetry(url, payload, maxAttempts);
 
     if (!res.ok) {
-      throw new Error(
-        `Failed to ingest data: ${res.status} ${await res.text()}`,
+      const errorText = await res.text();
+      throw new ApiError(
+        `Failed to ingest data: ${res.status} ${errorText}`,
+        res.status,
       );
     }
     core.info("Successfully ingested data to PulseOwl.");
