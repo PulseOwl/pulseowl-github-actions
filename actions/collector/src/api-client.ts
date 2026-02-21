@@ -23,6 +23,42 @@ export class ApiClient {
     this.userAgent = `pulseowl-github-actions-collector/${VERSION}`;
   }
 
+  public async fetchConfig(
+    payload: unknown,
+    maxAttempts?: number,
+  ): Promise<CollectorConfigResponse> {
+    const url = `${this.baseUrl}/github/v1/collector/config`;
+    const res = await this.fetchWithRetry(url, payload, maxAttempts);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new ApiError(
+        `Failed to fetch config: ${res.status} ${errorText}`,
+        res.status,
+      );
+    }
+
+    const json = await res.json();
+    return CollectorConfigResponseSchema.parse(json);
+  }
+
+  public async sendIngest(
+    payload: unknown,
+    maxAttempts?: number,
+  ): Promise<void> {
+    const url = `${this.baseUrl}/github/v1/collector/ingest`;
+    const res = await this.fetchWithRetry(url, payload, maxAttempts);
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new ApiError(
+        `Failed to ingest data: ${res.status} ${errorText}`,
+        res.status,
+      );
+    }
+    core.info("Successfully ingested data to PulseOwl.");
+  }
+
   private async fetchWithRetry(
     url: string,
     payload: unknown,
@@ -77,38 +113,5 @@ export class ApiClient {
       }
     }
     throw new Error("Invalid maxAttempts: must be at least 1");
-  }
-
-  async fetchConfig(
-    payload: unknown,
-    maxAttempts?: number,
-  ): Promise<CollectorConfigResponse> {
-    const url = `${this.baseUrl}/github/v1/collector/config`;
-    const res = await this.fetchWithRetry(url, payload, maxAttempts);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new ApiError(
-        `Failed to fetch config: ${res.status} ${errorText}`,
-        res.status,
-      );
-    }
-
-    const json = await res.json();
-    return CollectorConfigResponseSchema.parse(json);
-  }
-
-  async sendIngest(payload: unknown, maxAttempts?: number): Promise<void> {
-    const url = `${this.baseUrl}/github/v1/collector/ingest`;
-    const res = await this.fetchWithRetry(url, payload, maxAttempts);
-
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new ApiError(
-        `Failed to ingest data: ${res.status} ${errorText}`,
-        res.status,
-      );
-    }
-    core.info("Successfully ingested data to PulseOwl.");
   }
 }
