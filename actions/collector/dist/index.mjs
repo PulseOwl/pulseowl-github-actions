@@ -20448,6 +20448,25 @@ var ApiClient = class {
 		this.token = token;
 		this.userAgent = `pulseowl-github-actions-collector/${VERSION}`;
 	}
+	async fetchConfig(payload, maxAttempts) {
+		const url = `${this.baseUrl}/github/v1/collector/config`;
+		const res = await this.fetchWithRetry(url, payload, maxAttempts);
+		if (!res.ok) {
+			const errorText = await res.text();
+			throw new ApiError(`Failed to fetch config: ${res.status} ${errorText}`, res.status);
+		}
+		const json = await res.json();
+		return CollectorConfigResponseSchema.parse(json);
+	}
+	async sendIngest(payload, maxAttempts) {
+		const url = `${this.baseUrl}/github/v1/collector/ingest`;
+		const res = await this.fetchWithRetry(url, payload, maxAttempts);
+		if (!res.ok) {
+			const errorText = await res.text();
+			throw new ApiError(`Failed to ingest data: ${res.status} ${errorText}`, res.status);
+		}
+		info("Successfully ingested data to PulseOwl.");
+	}
 	async fetchWithRetry(url, payload, maxAttempts = 3) {
 		const jsonString = JSON.stringify(payload);
 		let body = jsonString;
@@ -20488,25 +20507,6 @@ var ApiClient = class {
 			}
 		}
 		throw new Error("Invalid maxAttempts: must be at least 1");
-	}
-	async fetchConfig(payload, maxAttempts) {
-		const url = `${this.baseUrl}/github/v1/collector/config`;
-		const res = await this.fetchWithRetry(url, payload, maxAttempts);
-		if (!res.ok) {
-			const errorText = await res.text();
-			throw new ApiError(`Failed to fetch config: ${res.status} ${errorText}`, res.status);
-		}
-		const json = await res.json();
-		return CollectorConfigResponseSchema.parse(json);
-	}
-	async sendIngest(payload, maxAttempts) {
-		const url = `${this.baseUrl}/github/v1/collector/ingest`;
-		const res = await this.fetchWithRetry(url, payload, maxAttempts);
-		if (!res.ok) {
-			const errorText = await res.text();
-			throw new ApiError(`Failed to ingest data: ${res.status} ${errorText}`, res.status);
-		}
-		info("Successfully ingested data to PulseOwl.");
 	}
 };
 
@@ -23734,6 +23734,7 @@ function getGithubContext() {
 }
 function getEventTimestamp() {
 	const eventPath = process.env.GITHUB_EVENT_PATH;
+	const eventName = process.env.GITHUB_EVENT_NAME;
 	if (eventPath && fs$2.existsSync(eventPath)) try {
 		const event = JSON.parse(fs$2.readFileSync(eventPath, "utf8"));
 		if (event.head_commit?.timestamp) {
@@ -23748,10 +23749,15 @@ function getEventTimestamp() {
 			info(`Using release created timestamp: ${event.release.created_at}`);
 			return event.release.created_at;
 		}
+		if (eventName === "workflow_dispatch" || eventName === "schedule") {
+			info(`Event is '${eventName}', using current execution time as trigger time.`);
+			return (/* @__PURE__ */ new Date()).toISOString();
+		}
 		if (event.created_at) {
 			info(`Using created timestamp: ${event.created_at}`);
 			return event.created_at;
 		}
+		debug(`No timestamp found in event payload. Event: ${eventName}. Keys: ${Object.keys(event).join(", ")}`);
 	} catch (error$1) {
 		warning(`Failed to parse event payload: ${error$1}`);
 	}
