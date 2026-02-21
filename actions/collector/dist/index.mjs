@@ -20416,7 +20416,7 @@ const GithubContextSchema = object({
 	actor: string()
 });
 const BaseRequestSchema = object({
-	timestamp: datetime({ offset: true }),
+	timestamp: datetime(),
 	github: GithubContextSchema,
 	inputs: object({
 		pulseowl_env: string().optional(),
@@ -23737,25 +23737,27 @@ function getEventTimestamp() {
 	const eventName = process.env.GITHUB_EVENT_NAME;
 	if (eventPath && fs$2.existsSync(eventPath)) try {
 		const event = JSON.parse(fs$2.readFileSync(eventPath, "utf8"));
+		let rawTimestamp;
 		if (event.head_commit?.timestamp) {
 			info(`Using commit timestamp: ${event.head_commit.timestamp}`);
-			return event.head_commit.timestamp;
-		}
-		if (event.pull_request?.updated_at) {
-			info(`Using pull request updated timestamp: ${event.pull_request.updated_at}`);
-			return event.pull_request.updated_at;
-		}
-		if (event.release?.created_at) {
+			rawTimestamp = event.head_commit.timestamp;
+		} else if (event.pull_request?.updated_at) {
+			info(`Using PR updated timestamp: ${event.pull_request.updated_at}`);
+			rawTimestamp = event.pull_request.updated_at;
+		} else if (event.release?.created_at) {
 			info(`Using release created timestamp: ${event.release.created_at}`);
-			return event.release.created_at;
-		}
-		if (eventName === "workflow_dispatch" || eventName === "schedule") {
-			info(`Event is '${eventName}', using current execution time as trigger time.`);
+			rawTimestamp = event.release.created_at;
+		} else if (eventName === "workflow_dispatch" || eventName === "schedule") {
+			info(`Event is '${eventName}', using current time.`);
 			return (/* @__PURE__ */ new Date()).toISOString();
-		}
-		if (event.created_at) {
+		} else if (event.created_at) {
 			info(`Using created timestamp: ${event.created_at}`);
-			return event.created_at;
+			rawTimestamp = event.created_at;
+		}
+		if (rawTimestamp) try {
+			return new Date(rawTimestamp).toISOString();
+		} catch (e) {
+			warning(`Failed to parse timestamp '${rawTimestamp}': ${e}`);
 		}
 		debug(`No timestamp found in event payload. Event: ${eventName}. Keys: ${Object.keys(event).join(", ")}`);
 	} catch (error$1) {
