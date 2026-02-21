@@ -16963,6 +16963,38 @@ function getIDToken(aud) {
 var version$1 = "1.0.0";
 
 //#endregion
+//#region src/errors.ts
+/**
+* Custom error class that includes HTTP status code for error categorization
+*/
+var ApiError = class extends Error {
+	constructor(message, statusCode) {
+		super(message);
+		this.statusCode = statusCode;
+		this.name = "ApiError";
+	}
+};
+/**
+* Determines if an error should cause the workflow to fail or just warn.
+*
+* Returns true if the error should cause a failure (setFailed),
+* false if it should only warn (warning).
+*/
+function shouldFailOnError(error$1) {
+	if (error$1 instanceof ApiError && error$1.statusCode !== void 0) {
+		const status = error$1.statusCode;
+		if (status === 400) return true;
+		if (status === 401 || status === 403) return true;
+		if (status === 429 || status >= 500) return false;
+		if (status >= 400 && status < 500) return true;
+	}
+	const msg = error$1 instanceof Error ? error$1.message : String(error$1).toLowerCase();
+	if (msg.includes("config") || msg.includes("authentication") || msg.includes("authorization") || msg.includes("token") || msg.includes("oidc")) return true;
+	if (msg.includes("timeout") || msg.includes("network") || msg.includes("connection") || msg.includes("econnrefused")) return false;
+	return true;
+}
+
+//#endregion
 //#region node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js
 /** A special constant with type `never` */
 const NEVER = Object.freeze({ status: "aborted" });
@@ -20384,7 +20416,7 @@ const GithubContextSchema = object({
 	actor: string()
 });
 const BaseRequestSchema = object({
-	timestamp: datetime(),
+	timestamp: datetime({ offset: true }),
 	github: GithubContextSchema,
 	inputs: object({
 		pulseowl_env: string().optional(),
@@ -20460,14 +20492,20 @@ var ApiClient = class {
 	async fetchConfig(payload, maxAttempts) {
 		const url = `${this.baseUrl}/github/v1/collector/config`;
 		const res = await this.fetchWithRetry(url, payload, maxAttempts);
-		if (!res.ok) throw new Error(`Failed to fetch config: ${res.status} ${await res.text()}`);
+		if (!res.ok) {
+			const errorText = await res.text();
+			throw new ApiError(`Failed to fetch config: ${res.status} ${errorText}`, res.status);
+		}
 		const json = await res.json();
 		return CollectorConfigResponseSchema.parse(json);
 	}
 	async sendIngest(payload, maxAttempts) {
 		const url = `${this.baseUrl}/github/v1/collector/ingest`;
 		const res = await this.fetchWithRetry(url, payload, maxAttempts);
-		if (!res.ok) throw new Error(`Failed to ingest data: ${res.status} ${await res.text()}`);
+		if (!res.ok) {
+			const errorText = await res.text();
+			throw new ApiError(`Failed to ingest data: ${res.status} ${errorText}`, res.status);
+		}
 		info("Successfully ingested data to PulseOwl.");
 	}
 };
@@ -23774,7 +23812,8 @@ async function run() {
 		} else info("No matching files found to ingest.");
 	} catch (error$1) {
 		const msg = error$1 instanceof Error ? error$1.message : String(error$1);
-		setFailed(msg);
+		if (shouldFailOnError(error$1)) setFailed(msg);
+		else warning(`PulseOwl collection skipped: ${msg}`);
 	}
 }
 
