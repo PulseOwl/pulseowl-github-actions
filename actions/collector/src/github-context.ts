@@ -20,6 +20,7 @@ export function getGithubContext(): GithubContext {
 
 export function getEventTimestamp(): string {
   const eventPath = process.env.GITHUB_EVENT_PATH;
+  const eventName = process.env.GITHUB_EVENT_NAME;
 
   if (eventPath && fs.existsSync(eventPath)) {
     try {
@@ -47,13 +48,27 @@ export function getEventTimestamp(): string {
         return event.release.created_at;
       }
 
-      // For 'workflow_dispatch' or other events, try to find a created_at
+      // Explicitly handle workflow_dispatch and schedule
+      if (eventName === "workflow_dispatch" || eventName === "schedule") {
+        core.info(
+          `Event is '${eventName}', using current execution time as trigger time.`,
+        );
+        return new Date().toISOString();
+      }
+
+      // For other events, try to find a created_at
       if (event.created_at) {
         core.info(`Using created timestamp: ${event.created_at}`);
         return event.created_at;
       }
+
+      // Debugging: If we are here, we missed a timestamp.
+      core.debug(
+        `No timestamp found in event payload. Event: ${eventName}. Keys: ${Object.keys(
+          event,
+        ).join(", ")}`,
+      );
     } catch (error) {
-      // If parsing fails, fall back to current time
       core.warning(`Failed to parse event payload: ${error}`);
     }
   }
