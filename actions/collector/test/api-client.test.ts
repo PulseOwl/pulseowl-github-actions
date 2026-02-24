@@ -202,7 +202,7 @@ describe("ApiClient", () => {
 
       await client.sendIngest(smallPayload);
 
-      // 1. Verify general structure and required headers
+      // Verify general structure and required headers
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
@@ -216,7 +216,7 @@ describe("ApiClient", () => {
         }),
       );
 
-      // 2. Verify gzip is NOT present
+      // Verify gzip is NOT present
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({

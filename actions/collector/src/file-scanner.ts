@@ -16,7 +16,7 @@ export interface ScanningRule {
   sourceFileGlobPatterns: string[];
 }
 
-// Base ignores that are always safe (high confidence)
+// Base ignores that are always safe
 const BASE_IGNORE_PATTERNS = [
   // Version Control
   "**/.git/**",
@@ -56,7 +56,7 @@ async function detectVendorIgnores(): Promise<string[]> {
   const specificIgnores: string[] = [];
 
   try {
-    // 1. Go Modules: Find all go.mod files
+    // Go Modules: Find all go.mod files
     // Go vendor directories MUST be in the same directory as go.mod
     const goModFiles = await glob("**/go.mod", {
       ignore: BASE_IGNORE_PATTERNS,
