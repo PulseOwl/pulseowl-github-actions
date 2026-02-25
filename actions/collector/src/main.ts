@@ -16,6 +16,7 @@ export async function run(): Promise<void> {
     const configPath =
       core.getInput("config-path") || ".config/pulseowl/config.yml";
     const audience = core.getInput("audience") || "pulseowl";
+    const callerVersion = core.getInput("caller-version") || "unknown";
 
     // Auth & Context
     const oidcToken = await getOIDCToken(audience);

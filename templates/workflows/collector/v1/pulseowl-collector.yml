@@ -25,8 +25,9 @@ jobs:
   pulseowl:
     uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@collector-v1
     with:
+      caller-version: "1.0.0"
+      audience: "pulseowl"
       pulseowl-env: ${{ inputs.pulseowl-env || '' }}
       # To use a custom config path, replace the '' below with your path
       # Example: ${{ inputs.config-path || 'my-custom-folder/config.yml' }}
       config-path: ${{ inputs.config-path || '' }}
-      audience: "pulseowl"

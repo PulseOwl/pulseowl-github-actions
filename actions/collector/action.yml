@@ -13,6 +13,10 @@ inputs:
     description: "OIDC audience to request."
     required: false
     default: "pulseowl"
+  caller-version:
+    description: "Version of the collector caller workflow."
+    required: false
+    default: "unknown"
 
 runs:
   using: "node24"
