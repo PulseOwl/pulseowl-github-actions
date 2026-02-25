@@ -6,11 +6,11 @@ import { GithubContext } from "./schemas";
 export function getGithubContext(): GithubContext {
   return {
     repository: process.env.GITHUB_REPOSITORY || "",
-    repository_id: process.env.GITHUB_REPOSITORY_ID || "",
-    repository_owner: process.env.GITHUB_REPOSITORY_OWNER || "",
-    repository_owner_id: process.env.GITHUB_REPOSITORY_OWNER_ID || "",
-    run_id: process.env.GITHUB_RUN_ID || "",
-    run_attempt: process.env.GITHUB_RUN_ATTEMPT || "",
+    repositoryId: process.env.GITHUB_REPOSITORY_ID || "",
+    repositoryOwner: process.env.GITHUB_REPOSITORY_OWNER || "",
+    repositoryOwnerId: process.env.GITHUB_REPOSITORY_OWNER_ID || "",
+    runId: process.env.GITHUB_RUN_ID || "",
+    runAttempt: process.env.GITHUB_RUN_ATTEMPT || "",
     workflow: process.env.GITHUB_WORKFLOW || "",
     ref: process.env.GITHUB_REF || "",
     sha: process.env.GITHUB_SHA || "",

@@ -8,6 +8,7 @@ import {
   getGithubContext,
   getOIDCToken,
 } from "./github-context";
+import { BaseRequest, CollectorConfigResponse } from "./schemas";
 
 export async function run(): Promise<void> {
   try {
@@ -25,21 +26,24 @@ export async function run(): Promise<void> {
     const apiClient = new ApiClient(envSuffix, oidcToken);
 
     // Prepare Base Payload
-    const basePayload = {
+    const basePayload: Omit<BaseRequest, "data"> = {
       timestamp: getEventTimestamp(),
       github: githubContext,
       inputs: {
-        pulseowl_env: envSuffix,
-        config_path: configPath,
+        pulseowlEnv: envSuffix,
+        configPath: configPath,
+        callerVersion: callerVersion,
       },
     };
 
     // Fetch Config
     core.info("Fetching Collector Configuration...");
-    const configResponse = await apiClient.fetchConfig({
-      ...basePayload,
-      data: {}, // Empty data for config request
-    });
+    const configResponse: CollectorConfigResponse = await apiClient.fetchConfig(
+      {
+        ...basePayload,
+        data: {}, // Empty data for config request
+      },
+    );
 
     const rules = configResponse.data.rules;
 
