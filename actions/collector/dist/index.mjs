@@ -20405,11 +20405,11 @@ const meta = meta$1;
 //#region src/schemas.ts
 const GithubContextSchema = object({
 	repository: string(),
-	repository_id: string(),
-	repository_owner: string(),
-	repository_owner_id: string(),
-	run_id: string(),
-	run_attempt: string(),
+	repositoryId: string(),
+	repositoryOwner: string(),
+	repositoryOwnerId: string(),
+	runId: string(),
+	runAttempt: string(),
 	workflow: string(),
 	ref: string(),
 	sha: string(),
@@ -20419,8 +20419,9 @@ const BaseRequestSchema = object({
 	timestamp: datetime(),
 	github: GithubContextSchema,
 	inputs: object({
-		pulseowl_env: string().optional(),
-		config_path: string().optional()
+		pulseowlEnv: string().optional(),
+		configPath: string().optional(),
+		callerVersion: string().optional()
 	})
 });
 const CollectorConfigResponseSchema = object({ data: object({ rules: array(object({
@@ -23721,11 +23722,11 @@ async function scanFiles(rules) {
 function getGithubContext() {
 	return {
 		repository: process.env.GITHUB_REPOSITORY || "",
-		repository_id: process.env.GITHUB_REPOSITORY_ID || "",
-		repository_owner: process.env.GITHUB_REPOSITORY_OWNER || "",
-		repository_owner_id: process.env.GITHUB_REPOSITORY_OWNER_ID || "",
-		run_id: process.env.GITHUB_RUN_ID || "",
-		run_attempt: process.env.GITHUB_RUN_ATTEMPT || "",
+		repositoryId: process.env.GITHUB_REPOSITORY_ID || "",
+		repositoryOwner: process.env.GITHUB_REPOSITORY_OWNER || "",
+		repositoryOwnerId: process.env.GITHUB_REPOSITORY_OWNER_ID || "",
+		runId: process.env.GITHUB_RUN_ID || "",
+		runAttempt: process.env.GITHUB_RUN_ATTEMPT || "",
 		workflow: process.env.GITHUB_WORKFLOW || "",
 		ref: process.env.GITHUB_REF || "",
 		sha: process.env.GITHUB_SHA || "",
@@ -23781,15 +23782,18 @@ async function run() {
 	try {
 		const envSuffix = getInput("pulseowl-env") || "";
 		const configPath = getInput("config-path") || ".config/pulseowl/config.yml";
-		const oidcToken = await getOIDCToken(getInput("audience") || "pulseowl");
+		const audience = getInput("audience") || "pulseowl";
+		const callerVersion = getInput("caller-version") || "unknown";
+		const oidcToken = await getOIDCToken(audience);
 		const githubContext = getGithubContext();
 		const apiClient = new ApiClient(envSuffix, oidcToken);
 		const basePayload = {
 			timestamp: getEventTimestamp(),
 			github: githubContext,
 			inputs: {
-				pulseowl_env: envSuffix,
-				config_path: configPath
+				pulseowlEnv: envSuffix,
+				configPath,
+				callerVersion
 			}
 		};
 		info("Fetching Collector Configuration...");
