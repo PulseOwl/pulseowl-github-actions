@@ -16965,6 +16965,15 @@ var version$1 = "1.0.0";
 //#endregion
 //#region src/errors.ts
 /**
+* Custom error class for misconfigurations (e.g., overly broad glob patterns)
+*/
+var ConfigurationError = class extends Error {
+	constructor(message) {
+		super(message);
+		this.name = "ConfigurationError";
+	}
+};
+/**
 * Custom error class that includes HTTP status code for error categorization
 */
 var ApiError = class extends Error {
@@ -16981,6 +16990,7 @@ var ApiError = class extends Error {
 * false if it should only warn (warning).
 */
 function shouldFailOnError(error$1) {
+	if (error$1 instanceof ConfigurationError) return true;
 	if (error$1 instanceof ApiError && error$1.statusCode !== void 0) {
 		const status = error$1.statusCode;
 		if (status === 400) return true;
@@ -23630,6 +23640,7 @@ Ze.glob = Ze;
 
 //#endregion
 //#region src/file-scanner.ts
+const MAX_SCANNED_FILES = 50;
 const BASE_IGNORE_PATTERNS = [
 	"**/.git/**",
 	"**/node_modules/**",
@@ -23694,10 +23705,18 @@ async function scanFiles(rules) {
 			ignore: allIgnores
 		});
 		for (const filePath of matches) {
-			if (!fileRulesMap.has(filePath)) fileRulesMap.set(filePath, /* @__PURE__ */ new Set());
+			if (!fileRulesMap.has(filePath)) {
+				if (fileRulesMap.size >= MAX_SCANNED_FILES) {
+					const msg = `Configuration error: Matched more than the hard limit of ${MAX_SCANNED_FILES} files. This typically happens if a glob pattern is too broad. Please refine your rules.`;
+					warning(msg);
+					throw new ConfigurationError(msg);
+				}
+				fileRulesMap.set(filePath, /* @__PURE__ */ new Set());
+			}
 			fileRulesMap.get(filePath)?.add(rule.id);
 		}
 	} catch (err) {
+		if (err instanceof ConfigurationError) throw err;
 		warning(`Error globbing pattern ${pattern} for rule ${rule.id}: ${err}`);
 	}
 	info(`Found ${fileRulesMap.size} unique files to scan.`);
