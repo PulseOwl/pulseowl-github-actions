@@ -1,4 +1,14 @@
 /**
+ * Custom error class for misconfigurations (e.g., overly broad glob patterns)
+ */
+export class ConfigurationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ConfigurationError";
+  }
+}
+
+/**
  * Custom error class that includes HTTP status code for error categorization
  */
 export class ApiError extends Error {
@@ -18,6 +28,10 @@ export class ApiError extends Error {
  * false if it should only warn (warning).
  */
 export function shouldFailOnError(error: unknown): boolean {
+  if (error instanceof ConfigurationError) {
+    return true;
+  }
+
   // If it's an ApiError with a status code, categorize based on status
   if (error instanceof ApiError && error.statusCode !== undefined) {
     const status = error.statusCode;

@@ -4,6 +4,10 @@ import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
+import { ConfigurationError } from "./errors";
+
+export const MAX_SCANNED_FILES = 50;
+
 export interface ScannedFile {
   path: string;
   content: string;
@@ -113,11 +117,19 @@ export async function scanFiles(rules: ScanningRule[]): Promise<ScannedFile[]> {
         });
         for (const filePath of matches) {
           if (!fileRulesMap.has(filePath)) {
+            if (fileRulesMap.size >= MAX_SCANNED_FILES) {
+              const msg = `Configuration error: Matched more than the hard limit of ${MAX_SCANNED_FILES} files. This typically happens if a glob pattern is too broad. Please refine your rules.`;
+              core.warning(msg);
+              throw new ConfigurationError(msg);
+            }
             fileRulesMap.set(filePath, new Set());
           }
           fileRulesMap.get(filePath)?.add(rule.id);
         }
       } catch (err) {
+        if (err instanceof ConfigurationError) {
+          throw err;
+        }
         core.warning(
           `Error globbing pattern ${pattern} for rule ${rule.id}: ${err}`,
         );
