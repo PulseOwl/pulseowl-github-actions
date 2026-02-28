@@ -15,7 +15,10 @@ on:
 
   push:
     branches:
-      - main
+      # This branch was prefilled with your repository's default branch.
+      # Change it if you prefer to run PulseOwl on a different branch
+      # (e.g., the branch where you prepare releases).
+      - "{{DEFAULT_BRANCH}}"
 
 permissions:
   contents: read
