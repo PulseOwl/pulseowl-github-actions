@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ApiError, shouldFailOnError } from "../src/errors";
+import { ApiError, ConfigurationError, shouldFailOnError } from "../src/errors";
 
 describe("ApiError", () => {
   describe("constructor", () => {
@@ -17,6 +17,17 @@ describe("ApiError", () => {
       expect(error.message).toBe("Test error");
       expect(error.statusCode).toBeUndefined();
       expect(error.name).toBe("ApiError");
+    });
+  });
+});
+
+describe("ConfigurationError", () => {
+  describe("constructor", () => {
+    it("should create a ConfigurationError with message", () => {
+      const error = new ConfigurationError("Test config error");
+      expect(error.message).toBe("Test config error");
+      expect(error.name).toBe("ConfigurationError");
+      expect(error).toBeInstanceOf(Error);
     });
   });
 });
@@ -75,6 +86,13 @@ describe("shouldFailOnError", () => {
 
     it("should return true (fail) for ApiError without status code", () => {
       const error = new ApiError("Error without status");
+      expect(shouldFailOnError(error)).toBe(true);
+    });
+  });
+
+  describe("ConfigurationError", () => {
+    it("should return true (fail) for ConfigurationError instances", () => {
+      const error = new ConfigurationError("Invalid glob pattern");
       expect(shouldFailOnError(error)).toBe(true);
     });
   });
