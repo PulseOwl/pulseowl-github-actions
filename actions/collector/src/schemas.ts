@@ -21,6 +21,7 @@ export const BaseRequestSchema = z.object({
     pulseowlEnv: z.string().optional(),
     configPath: z.string().optional(),
     callerVersion: z.string().optional(),
+    reusableWorkflowPin: z.string().optional(),
   }),
 });
 export type BaseRequest = z.infer<typeof BaseRequestSchema>;

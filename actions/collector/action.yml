@@ -17,6 +17,10 @@ inputs:
     description: "Version of the collector caller workflow."
     required: false
     default: "unknown"
+  reusable-workflow-pin:
+    description: "Version pin of the reusable workflow."
+    required: false
+    default: "unknown"
 
 runs:
   using: "node24"

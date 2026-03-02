@@ -18,6 +18,8 @@ export async function run(): Promise<void> {
       core.getInput("config-path") || ".config/pulseowl/config.yml";
     const audience = core.getInput("audience") || "pulseowl";
     const callerVersion = core.getInput("caller-version") || "unknown";
+    const reusableWorkflowPin =
+      core.getInput("reusable-workflow-pin") || "unknown";
 
     // Auth & Context
     const oidcToken = await getOIDCToken(audience);
@@ -33,6 +35,7 @@ export async function run(): Promise<void> {
         pulseowlEnv: envSuffix,
         configPath: configPath,
         callerVersion: callerVersion,
+        reusableWorkflowPin: reusableWorkflowPin,
       },
     };
 

@@ -70,6 +70,8 @@ describe("main run function", () => {
           return "";
         case "caller-version":
           return "";
+        case "reusable-workflow-pin":
+          return "";
         default:
           return "";
       }
@@ -96,6 +98,7 @@ describe("main run function", () => {
           pulseowlEnv: "",
           configPath: ".config/pulseowl/config.yml",
           callerVersion: "unknown",
+          reusableWorkflowPin: "unknown",
         },
         data: {},
       });
@@ -113,6 +116,7 @@ describe("main run function", () => {
           pulseowlEnv: "",
           configPath: ".config/pulseowl/config.yml",
           callerVersion: "unknown",
+          reusableWorkflowPin: "unknown",
         },
         data: {
           files: [
@@ -167,6 +171,8 @@ describe("main run function", () => {
             return "custom-audience";
           case "caller-version":
             return "v1.2.3";
+          case "reusable-workflow-pin":
+            return "v1";
           default:
             return "";
         }
@@ -183,6 +189,7 @@ describe("main run function", () => {
             pulseowlEnv: "-dev",
             configPath: "custom/config.yml",
             callerVersion: "v1.2.3",
+            reusableWorkflowPin: "v1",
           },
         }),
       );

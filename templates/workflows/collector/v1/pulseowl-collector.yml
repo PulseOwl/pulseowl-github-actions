@@ -36,9 +36,10 @@ permissions:
 
 jobs:
   pulseowl:
-    uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@collector-v1
+    uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@{{REUSABLE_WORKFLOW_PIN}}
     with:
       caller-version: "1.0.0"
+      reusable-workflow-pin: "{{REUSABLE_WORKFLOW_PIN}}"
       audience: "pulseowl"
       pulseowl-env: ${{ inputs.pulseowl-env || '' }}
       # To use a custom config path, replace the '' below with your path

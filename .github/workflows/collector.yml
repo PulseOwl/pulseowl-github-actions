@@ -12,6 +12,10 @@ on:
         required: false
         type: string
         default: "unknown"
+      reusable-workflow-pin:
+        required: false
+        type: string
+        default: "unknown"
       pulseowl-env:
         required: false
         type: string
@@ -42,6 +46,7 @@ jobs:
         uses: PulseOwl/pulseowl-github-actions/actions/collector@collector-v1
         with:
           caller-version: ${{ inputs.caller-version }}
+          reusable-workflow-pin: ${{ inputs.reusable-workflow-pin }}
           audience: ${{ inputs.audience }}
           pulseowl-env: ${{ inputs.pulseowl-env }}
           config-path: ${{ inputs.config-path }}
