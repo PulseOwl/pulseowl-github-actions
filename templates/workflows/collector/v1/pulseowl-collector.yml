@@ -1,7 +1,7 @@
 # PulseOwl Collector
 # Lightweight workflow that sends selected dependency related files to PulseOwl
 # for automated dependency tracking and maintenance analysis.
-# Docs: https://docs.pulseowl.dev/github-integration
+# More info and docs: https://pulseowl.dev
 #
 # Required while using PulseOwl.
 # Safe to keep in the repository, it only runs on push events.
