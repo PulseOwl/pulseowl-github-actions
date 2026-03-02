@@ -20431,7 +20431,8 @@ const BaseRequestSchema = object({
 	inputs: object({
 		pulseowlEnv: string().optional(),
 		configPath: string().optional(),
-		callerVersion: string().optional()
+		callerVersion: string().optional(),
+		reusableWorkflowPin: string().optional()
 	})
 });
 const CollectorConfigResponseSchema = object({ data: object({ rules: array(object({
@@ -23803,6 +23804,7 @@ async function run() {
 		const configPath = getInput("config-path") || ".config/pulseowl/config.yml";
 		const audience = getInput("audience") || "pulseowl";
 		const callerVersion = getInput("caller-version") || "unknown";
+		const reusableWorkflowPin = getInput("reusable-workflow-pin") || "unknown";
 		const oidcToken = await getOIDCToken(audience);
 		const githubContext = getGithubContext();
 		const apiClient = new ApiClient(envSuffix, oidcToken);
@@ -23812,7 +23814,8 @@ async function run() {
 			inputs: {
 				pulseowlEnv: envSuffix,
 				configPath,
-				callerVersion
+				callerVersion,
+				reusableWorkflowPin
 			}
 		};
 		info("Fetching Collector Configuration...");
