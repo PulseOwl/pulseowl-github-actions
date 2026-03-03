@@ -39,7 +39,7 @@ jobs:
           lfs: false
 
       - name: Run PulseOwl collector
-        uses: PulseOwl/pulseowl-github-actions/actions/collector@{PENDING PING SHA}
+        uses: PulseOwl/pulseowl-github-actions/actions/collector@119f881f67903650a6ca223d58389a36e01735b9
         with:
           caller-version: ${{ inputs.caller-version }}
           reusable-workflow-pin: ${{ inputs.reusable-workflow-pin }}
