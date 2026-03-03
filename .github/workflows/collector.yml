@@ -39,7 +39,7 @@ jobs:
           lfs: false
 
       - name: Run PulseOwl collector
-        uses: PulseOwl/pulseowl-github-actions/actions/collector@941413719710d56b1790c1c10470b0f01beb0789
+        uses: PulseOwl/pulseowl-github-actions/actions/collector@52ea16b97b8d6849e08865a93c314e86c80a9b07
         with:
           caller-version: ${{ inputs.caller-version }}
           reusable-workflow-pin: ${{ inputs.reusable-workflow-pin }}
