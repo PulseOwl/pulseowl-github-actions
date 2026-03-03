@@ -23721,8 +23721,23 @@ async function scanFiles(rules) {
 	}
 	info(`Found ${fileRulesMap.size} unique files to scan.`);
 	const results = [];
+	const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
 	for (const [filePath, ruleIds] of fileRulesMap) try {
-		const content = await fs.readFile(filePath, "utf-8");
+		const absPath = path.resolve(workspace, filePath);
+		if (!absPath.startsWith(workspace + path.sep) && absPath !== workspace) {
+			warning(`Skipping file outside workspace: ${filePath}`);
+			continue;
+		}
+		if ((await fs.lstat(absPath)).isSymbolicLink()) {
+			warning(`Skipping symlink: ${filePath}`);
+			continue;
+		}
+		const real = await fs.realpath(absPath);
+		if (!real.startsWith(workspace + path.sep) && real !== workspace) {
+			warning(`Skipping path escaping workspace: ${filePath}`);
+			continue;
+		}
+		const content = await fs.readFile(real, "utf-8");
 		const contentHash = await calculateSha256(content);
 		results.push({
 			path: filePath,
