@@ -32,9 +32,9 @@ permissions:
 
 jobs:
   pulseowl:
-    uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@8b731320879a693a6ac26ec9cfb7b3caeef7ea55
+    uses: PulseOwl/pulseowl-github-actions/.github/workflows/collector.yml@f1fb94068e73adac95b70d72cccd8fe5b4fab31b
     with:
       caller-version: "1.0.0"
-      reusable-workflow-pin: "8b731320879a693a6ac26ec9cfb7b3caeef7ea55"
+      reusable-workflow-pin: "f1fb94068e73adac95b70d72cccd8fe5b4fab31b"
       audience: "pulseowl"
       pulseowl-env: ${{ inputs.pulseowl-env || '' }}
