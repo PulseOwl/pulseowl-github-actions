@@ -1,6 +1,7 @@
 import * as core from "@actions/core";
 import { glob } from "glob";
 import * as fs from "node:fs/promises";
+import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ConfigurationError } from "../src/errors";
@@ -20,12 +21,32 @@ vi.mock("@actions/core", () => ({
 }));
 
 describe("file-scanner", () => {
+  let originalWorkspace: string | undefined;
+  // Use path.resolve to ensure cross-platform compatibility (e.g. C:\github\workspace on Windows)
+  const MOCK_WORKSPACE = path.resolve("/github/workspace");
+
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Set a deterministic workspace for path resolution
+    originalWorkspace = process.env.GITHUB_WORKSPACE;
+    process.env.GITHUB_WORKSPACE = MOCK_WORKSPACE;
+
+    // Default mock implementations for the security checks
+    vi.mocked(fs.lstat).mockResolvedValue({
+      isSymbolicLink: () => false,
+    } as any);
+    vi.mocked(fs.realpath).mockImplementation(async (p) => p.toString());
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+
+    if (originalWorkspace === undefined) {
+      delete process.env.GITHUB_WORKSPACE;
+    } else {
+      process.env.GITHUB_WORKSPACE = originalWorkspace;
+    }
   });
 
   describe("calculateSha256", () => {
@@ -158,6 +179,66 @@ describe("file-scanner", () => {
       });
     });
 
+    describe("Security & Path Traversal Mitigations", () => {
+      it("should skip files that resolve outside the workspace", async () => {
+        // Simulates a directory traversal attack in the glob results
+        vi.mocked(glob).mockImplementation(
+          async () => ["../../etc/passwd"] as any,
+        );
+
+        const results = await scanFiles(defaultRules);
+
+        expect(core.warning).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Skipping file outside workspace: ../../etc/passwd",
+          ),
+        );
+        expect(results).toHaveLength(0);
+        expect(fs.readFile).not.toHaveBeenCalled();
+      });
+
+      it("should skip symbolic links", async () => {
+        // Simulates a file that is a symlink
+        vi.mocked(glob).mockImplementation(
+          async () => ["src/symlink.ts"] as any,
+        );
+        vi.mocked(fs.lstat).mockResolvedValue({
+          isSymbolicLink: () => true,
+        } as any);
+
+        const results = await scanFiles(defaultRules);
+
+        expect(core.warning).toHaveBeenCalledWith(
+          expect.stringContaining("Skipping symlink: src/symlink.ts"),
+        );
+        expect(results).toHaveLength(0);
+        expect(fs.readFile).not.toHaveBeenCalled();
+      });
+
+      it("should skip real paths that escape the workspace (symlink chains)", async () => {
+        vi.mocked(glob).mockImplementation(
+          async () => ["src/sneaky-link.ts"] as any,
+        );
+        vi.mocked(fs.lstat).mockResolvedValue({
+          isSymbolicLink: () => false,
+        } as any);
+
+        // Simulates a path that looks safe initially, but resolves outside via realpath
+        const externalPath = path.resolve("/etc/passwd");
+        vi.mocked(fs.realpath).mockResolvedValue(externalPath);
+
+        const results = await scanFiles(defaultRules);
+
+        expect(core.warning).toHaveBeenCalledWith(
+          expect.stringContaining(
+            "Skipping path escaping workspace: src/sneaky-link.ts",
+          ),
+        );
+        expect(results).toHaveLength(0);
+        expect(fs.readFile).not.toHaveBeenCalled();
+      });
+    });
+
     describe("Error Handling & Hard Limit", () => {
       it("should throw ConfigurationError if max limit is reached", async () => {
         // Generate MAX_SCANNED_FILES + 1 fake file paths
@@ -216,7 +297,8 @@ describe("file-scanner", () => {
         });
 
         vi.mocked(fs.readFile).mockImplementation(async (path) => {
-          if (path === "src/fail.ts") throw new Error("File locked");
+          if (path.toString().includes("src/fail.ts"))
+            throw new Error("File locked");
           return "success content";
         });
 

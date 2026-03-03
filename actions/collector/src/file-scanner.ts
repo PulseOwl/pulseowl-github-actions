@@ -140,11 +140,35 @@ export async function scanFiles(rules: ScanningRule[]): Promise<ScannedFile[]> {
   core.info(`Found ${fileRulesMap.size} unique files to scan.`);
 
   const results: ScannedFile[] = [];
+  const workspace = process.env.GITHUB_WORKSPACE ?? process.cwd();
 
   // Read content, hash, and build result
   for (const [filePath, ruleIds] of fileRulesMap) {
     try {
-      const content = await fs.readFile(filePath, "utf-8");
+      // Resolve to an absolute path under the workspace
+      const absPath = path.resolve(workspace, filePath);
+
+      // Ensure the resolved path stays within the workspace boundary
+      if (!absPath.startsWith(workspace + path.sep) && absPath !== workspace) {
+        core.warning(`Skipping file outside workspace: ${filePath}`);
+        continue;
+      }
+
+      // Skip symlinks (prevents reading arbitrary host paths)
+      const st = await fs.lstat(absPath);
+      if (st.isSymbolicLink()) {
+        core.warning(`Skipping symlink: ${filePath}`);
+        continue;
+      }
+
+      // Ensure the real path also stays in workspace (covers symlink directory chains)
+      const real = await fs.realpath(absPath);
+      if (!real.startsWith(workspace + path.sep) && real !== workspace) {
+        core.warning(`Skipping path escaping workspace: ${filePath}`);
+        continue;
+      }
+
+      const content = await fs.readFile(real, "utf-8");
       const contentHash = await calculateSha256(content);
 
       results.push({
