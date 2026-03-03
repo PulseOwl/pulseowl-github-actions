@@ -19,7 +19,6 @@ export const BaseRequestSchema = z.object({
   github: GithubContextSchema,
   inputs: z.object({
     pulseowlEnv: z.string().optional(),
-    configPath: z.string().optional(),
     callerVersion: z.string().optional(),
     reusableWorkflowPin: z.string().optional(),
   }),

@@ -18,10 +18,6 @@ on:
         required: false
         type: string
         default: ""
-      config-path:
-        description: "Optional path to PulseOwl config file. Defaults to .config/pulseowl/config.yml if blank."
-        required: false
-        type: string
 
   push:
     branches:
@@ -42,6 +38,3 @@ jobs:
       reusable-workflow-pin: "{{REUSABLE_WORKFLOW_PIN}}"
       audience: "pulseowl"
       pulseowl-env: ${{ inputs.pulseowl-env || '' }}
-      # To use a custom config path, replace the '' below with your path
-      # Example: ${{ inputs.config-path || 'my-custom-folder/config.yml' }}
-      config-path: ${{ inputs.config-path || '' }}

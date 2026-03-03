@@ -64,8 +64,6 @@ describe("main run function", () => {
       switch (name) {
         case "pulseowl-env":
           return "";
-        case "config-path":
-          return "";
         case "audience":
           return "";
         case "caller-version":
@@ -96,7 +94,6 @@ describe("main run function", () => {
         github: mockGithubContext,
         inputs: {
           pulseowlEnv: "",
-          configPath: ".config/pulseowl/config.yml",
           callerVersion: "unknown",
           reusableWorkflowPin: "unknown",
         },
@@ -114,7 +111,6 @@ describe("main run function", () => {
         github: mockGithubContext,
         inputs: {
           pulseowlEnv: "",
-          configPath: ".config/pulseowl/config.yml",
           callerVersion: "unknown",
           reusableWorkflowPin: "unknown",
         },
@@ -165,8 +161,6 @@ describe("main run function", () => {
         switch (name) {
           case "pulseowl-env":
             return "-dev";
-          case "config-path":
-            return "custom/config.yml";
           case "audience":
             return "custom-audience";
           case "caller-version":
@@ -187,7 +181,6 @@ describe("main run function", () => {
         expect.objectContaining({
           inputs: {
             pulseowlEnv: "-dev",
-            configPath: "custom/config.yml",
             callerVersion: "v1.2.3",
             reusableWorkflowPin: "v1",
           },

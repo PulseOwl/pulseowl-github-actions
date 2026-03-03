@@ -20,10 +20,6 @@ on:
         required: false
         type: string
         default: ""
-      config-path:
-        required: false
-        type: string
-        default: ""
 
 jobs:
   collect:
@@ -49,4 +45,3 @@ jobs:
           reusable-workflow-pin: ${{ inputs.reusable-workflow-pin }}
           audience: ${{ inputs.audience }}
           pulseowl-env: ${{ inputs.pulseowl-env }}
-          config-path: ${{ inputs.config-path }}

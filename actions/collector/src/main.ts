@@ -14,8 +14,6 @@ export async function run(): Promise<void> {
   try {
     // Gather Inputs
     const envSuffix = core.getInput("pulseowl-env") || "";
-    const configPath =
-      core.getInput("config-path") || ".config/pulseowl/config.yml";
     const audience = core.getInput("audience") || "pulseowl";
     const callerVersion = core.getInput("caller-version") || "unknown";
     const reusableWorkflowPin =
@@ -33,7 +31,6 @@ export async function run(): Promise<void> {
       github: githubContext,
       inputs: {
         pulseowlEnv: envSuffix,
-        configPath: configPath,
         callerVersion: callerVersion,
         reusableWorkflowPin: reusableWorkflowPin,
       },
