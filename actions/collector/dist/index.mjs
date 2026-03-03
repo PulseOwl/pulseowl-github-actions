@@ -20430,7 +20430,6 @@ const BaseRequestSchema = object({
 	github: GithubContextSchema,
 	inputs: object({
 		pulseowlEnv: string().optional(),
-		configPath: string().optional(),
 		callerVersion: string().optional(),
 		reusableWorkflowPin: string().optional()
 	})
@@ -23801,7 +23800,6 @@ async function getOIDCToken(audience) {
 async function run() {
 	try {
 		const envSuffix = getInput("pulseowl-env") || "";
-		const configPath = getInput("config-path") || ".config/pulseowl/config.yml";
 		const audience = getInput("audience") || "pulseowl";
 		const callerVersion = getInput("caller-version") || "unknown";
 		const reusableWorkflowPin = getInput("reusable-workflow-pin") || "unknown";
@@ -23813,7 +23811,6 @@ async function run() {
 			github: githubContext,
 			inputs: {
 				pulseowlEnv: envSuffix,
-				configPath,
 				callerVersion,
 				reusableWorkflowPin
 			}
