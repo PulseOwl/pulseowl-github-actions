@@ -57,11 +57,6 @@ export async function run(): Promise<void> {
     }
     core.endGroup();
 
-    if (rules.length === 0) {
-      core.info("Exiting.");
-      return;
-    }
-
     // Collect Files
     core.info(`Scanning files for ${rules.length} rules...`);
     const scannedFiles = await scanFiles(rules);
@@ -77,17 +72,13 @@ export async function run(): Promise<void> {
     core.endGroup();
 
     // Ingest Data
-    if (scannedFiles.length > 0) {
-      core.info("Sending data to PulseOwl...");
-      await apiClient.sendIngest({
-        ...basePayload,
-        data: {
-          files: scannedFiles,
-        },
-      });
-    } else {
-      core.info("No matching files found to ingest.");
-    }
+    core.info("Sending data to PulseOwl...");
+    await apiClient.sendIngest({
+      ...basePayload,
+      data: {
+        files: scannedFiles,
+      },
+    });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
 

@@ -130,27 +130,36 @@ describe("main run function", () => {
       expect(core.warning).not.toHaveBeenCalled();
     });
 
-    it("should exit early if no rules are returned from config", async () => {
+    it("should proceed to send empty ingest if no rules are returned from config", async () => {
       mockFetchConfig.mockResolvedValue({ data: { rules: [] } });
+      vi.mocked(scanFiles).mockResolvedValue([]); // Need to mock scanFiles to return empty array when no rules are passed
 
       await run();
 
       expect(mockFetchConfig).toHaveBeenCalled();
-      expect(scanFiles).not.toHaveBeenCalled();
-      expect(mockSendIngest).not.toHaveBeenCalled();
-      expect(core.info).toHaveBeenCalledWith("Exiting.");
+      expect(scanFiles).toHaveBeenCalledWith([]);
+      expect(mockSendIngest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            files: [],
+          },
+        }),
+      );
     });
 
-    it("should not call sendIngest if rules exist but no files match", async () => {
+    it("should call sendIngest with empty array if rules exist but no files match", async () => {
       vi.mocked(scanFiles).mockResolvedValue([]);
 
       await run();
 
       expect(mockFetchConfig).toHaveBeenCalled();
       expect(scanFiles).toHaveBeenCalled();
-      expect(mockSendIngest).not.toHaveBeenCalled();
-      expect(core.info).toHaveBeenCalledWith(
-        "No matching files found to ingest.",
+      expect(mockSendIngest).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            files: [],
+          },
+        }),
       );
     });
   });
