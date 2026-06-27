@@ -23839,23 +23839,17 @@ async function run() {
 		if (rules.length === 0) info("No rules found.");
 		else for (const rule of rules) info(`- ${rule.name} (ID: ${rule.id})`);
 		endGroup();
-		if (rules.length === 0) {
-			info("Exiting.");
-			return;
-		}
 		info(`Scanning files for ${rules.length} rules...`);
 		const scannedFiles = await scanFiles(rules);
 		startGroup(`Found ${scannedFiles.length} unique files to scan`);
 		if (scannedFiles.length === 0) info("No matching files found.");
 		else for (const file of scannedFiles) info(`- ${file.path}`);
 		endGroup();
-		if (scannedFiles.length > 0) {
-			info("Sending data to PulseOwl...");
-			await apiClient.sendIngest({
-				...basePayload,
-				data: { files: scannedFiles }
-			});
-		} else info("No matching files found to ingest.");
+		info("Sending data to PulseOwl...");
+		await apiClient.sendIngest({
+			...basePayload,
+			data: { files: scannedFiles }
+		});
 	} catch (error$1) {
 		const msg = error$1 instanceof Error ? error$1.message : String(error$1);
 		if (shouldFailOnError(error$1)) setFailed(msg);
