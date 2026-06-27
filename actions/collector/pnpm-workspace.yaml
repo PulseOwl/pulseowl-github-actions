@@ -1,0 +1,4 @@
+minimumReleaseAge: 4320 # 3 days
+packageManagerStrictVersion: true
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
