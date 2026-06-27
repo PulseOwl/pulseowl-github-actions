@@ -8,5 +8,8 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   unbundle: false,
-  noExternal: [/.*/],
+  deps: {
+    alwaysBundle: [/.*/],
+    onlyBundle: false,
+  },
 });
