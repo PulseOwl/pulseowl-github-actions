@@ -1,8 +1,6 @@
 # PulseOwl GitHub Actions
 
-Welcome to the official repository for [PulseOwl](https://pulseowl.dev) GitHub Actions.
-
-PulseOwl automates software dependency maintenance. It tracks dependencies across your tech stack (runtimes, infrastructure, compute, third-party APIs, packages, and more) and delivers actionable alerts directly where your team works, like Slack or Discord.
+[PulseOwl](https://pulseowl.dev) automates software dependency maintenance. It tracks dependencies across your tech stack (runtimes, infrastructure, compute, third-party APIs, packages, and more) and delivers actionable alerts directly where your team works, like Slack or Discord.
 
 > **Note:** PulseOwl is currently in early access. You can apply for access on our [website](https://pulseowl.dev).
 
