@@ -7,7 +7,7 @@
 # Safe to keep in the repository, it only runs on push events.
 #
 # Updates are managed from the PulseOwl app.
-# Support: support@pulseowlhq.com
+# Support: support@pulseowl.dev
 name: PulseOwl Collector
 
 on:
